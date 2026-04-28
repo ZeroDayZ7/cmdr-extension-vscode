@@ -1,7 +1,17 @@
 {
   "name": "cli-helper",
-  "displayName": "cmdr",
-  "description": "cmdr",
+  "displayName": "CMDR Tools",
+  "description": "A developer productivity tool for code cleaning via CMDR CLI.",
+  "license": "Apache-2.0",
+  "publisher": "ZeroDayZ7",
+  "author": {
+    "name": "Neo"
+  },
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ZeroDayZ7/cli-helper-cmdr-extension-vscode"
+  },
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.116.0"
@@ -9,13 +19,21 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": ["*"],
+  "activationEvents": [],
   "main": "./dist/extension",
   "contributes": {
     "commands": [
       {
         "command": "cli-helper.rmvComments",
         "title": "RMC - Usuń komentarze"
+      },
+      {
+        "command": "cli-helper.treeClipboard",
+        "title": "Tree - Kopiuj strukturę do schowka"
+      },
+      {
+        "command": "cli-helper.fcDart",
+        "title": "FC - Połącz pliki (Tryb Dart)"
       }
     ],
     "submenus": [
@@ -28,12 +46,21 @@
       "explorer/context": [
         {
           "submenu": "cli-helper.submenu",
-          "group": "9_cutcopypaste"
+          "group": "7_modification"
         }
       ],
       "cli-helper.submenu": [
         {
-          "command": "cli-helper.rmvComments"
+          "command": "cli-helper.rmvComments",
+          "group": "1_main"
+        },
+        {
+          "command": "cli-helper.treeClipboard",
+          "group": "2_utils"
+        },
+        {
+          "command": "cli-helper.fcDart",
+          "group": "2_utils"
         }
       ]
     }

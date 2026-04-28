@@ -1,48 +1,83 @@
 import * as vscode from "vscode";
 import { exec } from "child_process";
-import * as fs from "fs";
 
 export function activate(context: vscode.ExtensionContext) {
-  let disposable = vscode.commands.registerCommand(
+  const rmvComments = vscode.commands.registerCommand(
     "cli-helper.rmvComments",
-    (uri: vscode.Uri) => {
+    async (uri: vscode.Uri) => {
       if (!uri) {
-        vscode.window.showErrorMessage("Nie wybrano elementu!");
         return;
       }
+      try {
+        const fileStat = await vscode.workspace.fs.stat(uri);
+        const isDirectory = fileStat.type === vscode.FileType.Directory;
+        const flag = isDirectory ? "-d" : "-f";
+        const command = `cmdr rmc ${flag} "${uri.fsPath}"`;
 
-      const filePath = uri.fsPath;
-
-      // Sprawdzamy czy to folder czy plik
-      const stats = fs.statSync(filePath);
-      const isDirectory = stats.isDirectory();
-      const flag = isDirectory ? "-d" : "-f";
-      const modeText = isDirectory ? "folder" : "plik";
-
-      exec(
-        `cmdr rmc ${flag} "${filePath}"`,
-        (error: any, stdout: string, stderr: string) => {
+        exec(command, (error) => {
           if (error) {
-            vscode.window.showErrorMessage(`Błąd: ${error.message}`);
+            vscode.window.showErrorMessage(`RMC Error: ${error.message}`);
             return;
           }
-
-          if (stdout) {
-            console.log("CLI Output:", stdout);
-          }
-          if (stderr) {
-            console.error(stderr);
-          }
-
           vscode.window.showInformationMessage(
-            `CMDR: Wyczyszczono ${modeText}: ${filePath}`,
+            `CMDR: Wyczyszczono ${isDirectory ? "folder" : "plik"}`,
           );
-        },
-      );
+        });
+      } catch (err) {
+        vscode.window.showErrorMessage(`System Error: ${err}`);
+      }
     },
   );
 
-  context.subscriptions.push(disposable);
+  const treeClipboard = vscode.commands.registerCommand(
+    "cli-helper.treeClipboard",
+    async (uri: vscode.Uri) => {
+      const targetPath = uri
+        ? uri.fsPath
+        : vscode.workspace.workspaceFolders?.[0].uri.fsPath;
+      if (!targetPath) {
+        return;
+      }
+
+      const command = `cmdr tree "${targetPath}" -c`;
+
+      exec(command, (error) => {
+        if (error) {
+          vscode.window.showErrorMessage(`Tree Error: ${error.message}`);
+          return;
+        }
+        vscode.window.showInformationMessage(
+          "CMDR: Struktura skopiowana do schowka!",
+        );
+      });
+    },
+  );
+
+  const fcDart = vscode.commands.registerCommand(
+    "cli-helper.fcDart",
+    async (uri: vscode.Uri) => {
+      const targetPath = uri
+        ? uri.fsPath
+        : vscode.workspace.workspaceFolders?.[0].uri.fsPath;
+      if (!targetPath) {
+        return;
+      }
+
+      const command = `cmdr fc -d`;
+
+      exec(command, { cwd: targetPath }, (error) => {
+        if (error) {
+          vscode.window.showErrorMessage(`FC Error: ${error.message}`);
+          return;
+        }
+        vscode.window.showInformationMessage(
+          "CMDR: Pliki Dart zostały połączone!",
+        );
+      });
+    },
+  );
+
+  context.subscriptions.push(rmvComments, treeClipboard, fcDart);
 }
 
 export function deactivate() {}
