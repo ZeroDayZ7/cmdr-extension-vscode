@@ -25,15 +25,15 @@
     "commands": [
       {
         "command": "cli-helper.rmvComments",
-        "title": "RMC - Usuń komentarze"
+        "title": "RMC - Remove Comments"
       },
       {
         "command": "cli-helper.treeClipboard",
-        "title": "Tree - Kopiuj strukturę do schowka"
+        "title": "Tree - Copy Structure to Clipboard"
       },
       {
         "command": "cli-helper.fcDart",
-        "title": "FC - Połącz pliki (Tryb Dart)"
+        "title": "FC - Combine Files (Dart Mode)"
       }
     ],
     "submenus": [
