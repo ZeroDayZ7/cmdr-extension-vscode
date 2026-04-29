@@ -29,17 +29,37 @@
       },
       {
         "command": "cli-helper.treeClipboard",
-        "title": "Tree - Copy Structure to Clipboard"
+        "title": "Tree - Copy Structure (Standard)"
       },
       {
         "command": "cli-helper.fcDart",
         "title": "FC - Combine Files (Dart Mode)"
+      },
+      {
+        "command": "cli-helper.treeAscii",
+        "title": "Copy as ASCII"
+      },
+      {
+        "command": "cli-helper.treeJson",
+        "title": "Copy as JSON"
+      },
+      {
+        "command": "cli-helper.treeCsv",
+        "title": "Copy as CSV"
+      },
+      {
+        "command": "cli-helper.treeMd",
+        "title": "Copy as Markdown"
       }
     ],
     "submenus": [
       {
         "id": "cli-helper.submenu",
         "label": "CMDR Tools"
+      },
+      {
+        "id": "cli-helper.treeFormats",
+        "label": "Tree - Special Formats"
       }
     ],
     "menus": {
@@ -61,6 +81,24 @@
         {
           "command": "cli-helper.fcDart",
           "group": "2_utils"
+        },
+        {
+          "submenu": "cli-helper.treeFormats",
+          "group": "3_tree_formats"
+        }
+      ],
+      "cli-helper.treeFormats": [
+        {
+          "command": "cli-helper.treeAscii"
+        },
+        {
+          "command": "cli-helper.treeJson"
+        },
+        {
+          "command": "cli-helper.treeCsv"
+        },
+        {
+          "command": "cli-helper.treeMd"
         }
       ]
     }
