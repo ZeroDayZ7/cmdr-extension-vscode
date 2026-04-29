@@ -2,39 +2,42 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "build",
-      "dependsOn": ["npm: compile", "npm: build-esbuild"],
+      "label": "CMDR CLI build",
+      "type": "npm",
+      "script": "compile",
       "group": {
         "kind": "build",
         "isDefault": true
       },
-      "problemMatcher": []
+      "problemMatcher": ["$tsc"]
     },
     {
-      "label": "watch",
-      "dependsOn": ["npm: watch:tsc", "npm: watch:esbuild"],
+      "label": "CMDR CLI watch",
+      "type": "npm",
+      "script": "watch",
+      "isBackground": true,
+      "group": "build",
       "presentation": {
         "reveal": "never"
       },
-      "group": "build"
+      "problemMatcher": ["$tsc-watch"]
     },
     {
-      "type": "npm",
-      "script": "watch:esbuild",
+      "label": "CMDR CLI build (VSIX)",
+      "type": "shell",
+      "command": "vsce package",
       "group": "build",
-      "isBackground": true,
-      "label": "npm: watch:esbuild",
       "presentation": {
-        "group": "watch",
-        "reveal": "never"
-      }
+        "reveal": "always"
+      },
+      "problemMatcher": []
     },
     {
       "type": "npm",
       "script": "watch:tsc",
+      "label": "npm: watch:tsc",
       "group": "build",
       "isBackground": true,
-      "label": "npm: watch:tsc",
       "presentation": {
         "group": "watch",
         "reveal": "never"
@@ -44,12 +47,6 @@
       "type": "npm",
       "script": "compile",
       "label": "npm: compile",
-      "group": "build"
-    },
-    {
-      "type": "npm",
-      "script": "build-esbuild",
-      "label": "npm: build-esbuild",
       "group": "build"
     },
     {
