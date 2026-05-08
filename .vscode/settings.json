@@ -12,7 +12,7 @@
     // "README.md": true,
     "tsconfig.json": true,
     "vsc-extension-quickstart.md": true,
-    "node_modules": true
+    "**/node_modules/": true
   },
   "search.exclude": {
     "out": true,
@@ -27,7 +27,7 @@
     "README.md": true,
     "tsconfig.json": true,
     "vsc-extension-quickstart.md": true,
-    "node_modules": true
+    "**/node_modules/": true
   },
 
   "js/ts.tsc.autoDetect": "off"

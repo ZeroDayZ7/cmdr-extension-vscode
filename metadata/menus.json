@@ -1,0 +1,94 @@
+{
+  "commands": [
+    {
+      "command": "cli-helper.annotate",
+      "title": "ANT - Annotate Project Path"
+    },
+    {
+      "command": "cli-helper.rmvComments",
+      "title": "RMC - Remove Comments"
+    },
+    {
+      "command": "cli-helper.treeClipboard",
+      "title": "Tree - Copy Structure (Standard)"
+    },
+    {
+      "command": "cli-helper.fcDart",
+      "title": "FC - Combine Files (Dart Mode)"
+    },
+    {
+      "command": "cli-helper.treeAscii",
+      "title": "Copy as ASCII"
+    },
+    {
+      "command": "cli-helper.treeJson",
+      "title": "Copy as JSON"
+    },
+    {
+      "command": "cli-helper.treeCsv",
+      "title": "Copy as CSV"
+    },
+    {
+      "command": "cli-helper.treeMd",
+      "title": "Copy as Markdown"
+    }
+  ],
+  "submenus": [
+    {
+      "id": "cli-helper.submenu",
+      "label": "CMDR Tools"
+    },
+    {
+      "id": "cli-helper.treeFormats",
+      "label": "Tree - Special Formats"
+    }
+  ],
+  "menus": {
+    "explorer/context": [
+      {
+        "submenu": "cli-helper.submenu",
+        "group": "7_modification"
+      }
+    ],
+    "cli-helper.submenu": [
+      {
+        "command": "cli-helper.annotate",
+        "group": "1_main@1"
+      },
+      {
+        "command": "cli-helper.rmvComments",
+        "group": "1_main@2"
+      },
+      {
+        "command": "cli-helper.treeClipboard",
+        "group": "2_utils@1"
+      },
+      {
+        "command": "cli-helper.fcDart",
+        "group": "2_utils@2"
+      },
+      {
+        "submenu": "cli-helper.treeFormats",
+        "group": "3_tree_formats"
+      }
+    ],
+    "cli-helper.treeFormats": [
+      {
+        "command": "cli-helper.treeAscii",
+        "group": "1_formats@1"
+      },
+      {
+        "command": "cli-helper.treeJson",
+        "group": "1_formats@2"
+      },
+      {
+        "command": "cli-helper.treeCsv",
+        "group": "1_formats@3"
+      },
+      {
+        "command": "cli-helper.treeMd",
+        "group": "1_formats@4"
+      }
+    ]
+  }
+}
