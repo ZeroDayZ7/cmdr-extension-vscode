@@ -11,4 +11,5 @@ export const COMMANDS = {
   TREE_MD: "cli-helper.treeMd",
 
   ANNOTATE: "cli-helper.annotate",
+  CODE_REGIONS: "cli-helper.codeRegions",
 } as const;

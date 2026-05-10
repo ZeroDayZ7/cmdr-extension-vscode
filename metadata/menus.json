@@ -5,6 +5,10 @@
       "title": "ANT - Annotate Project Path"
     },
     {
+      "command": "cli-helper.codeRegions",
+      "title": "REG - Wrap into #regions"
+    },
+    {
       "command": "cli-helper.rmvComments",
       "title": "RMC - Remove Comments"
     },
@@ -56,8 +60,12 @@
         "group": "1_main@1"
       },
       {
-        "command": "cli-helper.rmvComments",
+        "command": "cli-helper.codeRegions",
         "group": "1_main@2"
+      },
+      {
+        "command": "cli-helper.rmvComments",
+        "group": "1_main@3"
       },
       {
         "command": "cli-helper.treeClipboard",

@@ -12,13 +12,11 @@
     "type": "git",
     "url": "https://github.com/ZeroDayZ7/cli-helper-cmdr-extension-vscode"
   },
-  "version": "0.1.2",
+  "version": "0.2.2",
   "engines": {
     "vscode": "^1.116.0"
   },
-  "categories": [
-    "Other"
-  ],
+  "categories": ["Other"],
   "activationEvents": [],
   "main": "./dist/extension",
   "scripts": {
@@ -34,7 +32,11 @@
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+
+    "build:prod": "npm run gen-manifest && npm run check-types && node esbuild.js --production",
+    "package:vsix": "powershell -ExecutionPolicy Bypass -Command \"npm run build:prod; vsce package\"",
+    "build:full": "npm run package:vsix"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
