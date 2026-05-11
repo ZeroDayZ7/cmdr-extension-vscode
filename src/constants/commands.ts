@@ -2,7 +2,7 @@
 
 export const COMMANDS = {
   REMOVE_COMMENTS: "cli-helper.rmvComments",
-  FILES_COMBINE_DART: "cli-helper.fcDart",
+  FILES_COMBINE: "cli-helper.fcDart",
 
   TREE_CLIPBOARD: "cli-helper.treeClipboard",
   TREE_ASCII: "cli-helper.treeAscii",

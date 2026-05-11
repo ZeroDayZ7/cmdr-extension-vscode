@@ -18,7 +18,7 @@
     },
     {
       "command": "cli-helper.fcDart",
-      "title": "FC - Combine Files (Dart Mode)"
+      "title": "FC - Combine Files (Detect)"
     },
     {
       "command": "cli-helper.treeAscii",

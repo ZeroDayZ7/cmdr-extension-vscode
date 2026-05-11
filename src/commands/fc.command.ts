@@ -9,7 +9,7 @@ export function registerFCCommand(
   context: vscode.ExtensionContext,
 ) {
   const command = vscode.commands.registerCommand(
-    COMMANDS.FILES_COMBINE_DART,
+    COMMANDS.FILES_COMBINE,
     async (uri: vscode.Uri) => {
       const targetPath = uri
         ? uri.fsPath
@@ -21,11 +21,11 @@ export function registerFCCommand(
       }
 
       runCliCommand(
-        `cmdr fc -d`,
+        `cmdr fc`,
         {
           cwd: targetPath,
           successMessage:
-            "CMDR: Dart files combined successfully.",
+            "CMDR: Files combined successfully.",
         },
       );
     },
