@@ -1,4 +1,4 @@
-// src/constants/commands.ts
+// cmdr: cli-helper/src/constants/commands.ts
 
 export const COMMANDS = {
   REMOVE_COMMENTS: "cli-helper.rmvComments",

@@ -1,3 +1,5 @@
+// cmdr: cli-helper/src/commands/annotate.command.ts
+
 import * as vscode from "vscode";
 import { runCliCommand } from "../core/run-cli";
 import { COMMANDS } from "../constants/commands";

@@ -1,3 +1,5 @@
+// cmdr: cli-helper/src/commands/index.ts
+
 import * as vscode from "vscode";
 
 import { registerAnnotateCommand } from "./annotate.command";

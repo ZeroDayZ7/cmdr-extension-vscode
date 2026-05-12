@@ -1,3 +1,5 @@
+// cmdr: cli-helper/src/commands/tree.command.ts
+
 import * as vscode from "vscode";
 
 import { runCliCommand } from "../core/run-cli";
