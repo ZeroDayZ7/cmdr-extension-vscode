@@ -12,7 +12,7 @@
     "type": "git",
     "url": "https://github.com/ZeroDayZ7/cli-helper-cmdr-extension-vscode"
   },
-  "version": "0.3.321",
+  "version": "0.3.322",
   "engines": {
     "vscode": "^1.116.0"
   },
@@ -122,11 +122,11 @@
       "cli-helper.submenu": [
         {
           "command": "cli-helper.annotate",
-          "group": "1_modify@1"
+          "group": "1_annotate@1"
         },
         {
           "submenu": "cli-helper.annotateOptions",
-          "group": "1_modify@2"
+          "group": "1_annotate@2"
         },
         {
           "command": "cli-helper.codeRegions",

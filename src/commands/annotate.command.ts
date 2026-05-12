@@ -3,42 +3,60 @@ import { runCliCommand } from "../core/run-cli";
 import { COMMANDS } from "../constants/commands";
 import { getCliTargetFlag } from "../utils/path.util";
 
-async function executeAnnotate(uri: vscode.Uri, flags: string = "") {
+interface AnnotateOptions {
+  verbose?: boolean;
+  dryRun?: boolean;
+}
+
+async function executeAnnotate(uri: vscode.Uri, options: AnnotateOptions = {}) {
   if (!uri) {
+    vscode.window.showWarningMessage("CMDR: No file or folder selected.");
+
     return;
   }
 
   try {
     const targetFlag = await getCliTargetFlag(uri);
-    const fullCommand =
-      `cmdr ant ${targetFlag} "${uri.fsPath}" ${flags}`.trim();
 
-    runCliCommand(fullCommand, {
-      successMessage: flags.includes("dry-run")
-        ? "CMDR: Dry-run completed. Check output for preview."
-        : "CMDR: Path annotation process finished.",
+    const args: string[] = ["ant", targetFlag, uri.fsPath];
+
+    if (options.verbose) {
+      args.push("-v");
+    }
+
+    if (options.dryRun) {
+      args.push("--dry-run");
+    }
+
+    await runCliCommand("cmdr", args, {
+      cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+      successMessage: options.dryRun
+        ? "CMDR: Dry-run completed successfully."
+        : "CMDR: Annotation completed successfully.",
+      errorMessage: "CMDR: Annotation failed.",
     });
   } catch (error) {
-    vscode.window.showErrorMessage(`CMDR: Annotate error: ${error}`);
+    const message = error instanceof Error ? error.message : String(error);
+
+    vscode.window.showErrorMessage(`CMDR: Annotate error: ${message}`);
   }
 }
 
 export function registerAnnotateCommand(context: vscode.ExtensionContext) {
+  const register = (command: string, options?: AnnotateOptions) => {
+    return vscode.commands.registerCommand(command, async (uri: vscode.Uri) => {
+      await executeAnnotate(uri, options);
+    });
+  };
+
   context.subscriptions.push(
-    vscode.commands.registerCommand(COMMANDS.ANNOTATE, (uri: vscode.Uri) => {
-      executeAnnotate(uri);
+    register(COMMANDS.ANNOTATE),
+    register(COMMANDS.ANNOTATE_VERBOSE, {
+      verbose: true,
     }),
-    vscode.commands.registerCommand(
-      COMMANDS.ANNOTATE_VERBOSE,
-      (uri: vscode.Uri) => {
-        executeAnnotate(uri, "-v");
-      },
-    ),
-    vscode.commands.registerCommand(
-      COMMANDS.ANNOTATE_DRY_RUN,
-      (uri: vscode.Uri) => {
-        executeAnnotate(uri, "--dry-run -v");
-      },
-    ),
+    register(COMMANDS.ANNOTATE_DRY_RUN, {
+      verbose: true,
+      dryRun: true,
+    }),
   );
 }

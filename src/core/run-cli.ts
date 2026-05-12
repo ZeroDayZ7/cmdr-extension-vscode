@@ -1,33 +1,165 @@
-import { exec } from "child_process";
+import { spawn, ChildProcessWithoutNullStreams } from "child_process";
 import * as vscode from "vscode";
+import stripAnsi from "strip-ansi";
 
 export interface RunCliOptions {
-  successMessage?: string;
   cwd?: string;
+  successMessage?: string;
+  errorMessage?: string;
+  env?: NodeJS.ProcessEnv;
+  silent?: boolean;
+  clearOutput?: boolean;
 }
 
-const outputChannel = vscode.window.createOutputChannel("CMDR");
+enum LogLevel {
+  INFO = "INFO",
+  SUCCESS = "SUCCESS",
+  ERROR = "ERROR",
+  DEBUG = "DEBUG",
+}
 
-export function runCliCommand(command: string, options?: RunCliOptions) {
-  outputChannel.show(true);
-  outputChannel.appendLine(`> Executing: ${command}`);
+class CmdrLogger {
+  private static channel = vscode.window.createOutputChannel("CMDR");
 
-  exec(command, { cwd: options?.cwd }, (error, stdout, stderr) => {
-    if (stdout) {
-      outputChannel.appendLine(stdout);
+  static show() {
+    this.channel.show(true);
+  }
+
+  static clear() {
+    this.channel.clear();
+  }
+
+  private static write(level: LogLevel, message: string) {
+    const timestamp = new Date().toLocaleTimeString();
+
+    const clean = stripAnsi(message).trimEnd();
+
+    this.channel.appendLine(`[${timestamp}] [${level}] ${clean}`);
+  }
+
+  static info(message: string) {
+    this.write(LogLevel.INFO, message);
+  }
+
+  static success(message: string) {
+    this.write(LogLevel.SUCCESS, message);
+  }
+
+  static error(message: string) {
+    this.write(LogLevel.ERROR, message);
+  }
+
+  static debug(message: string) {
+    this.write(LogLevel.DEBUG, message);
+  }
+
+  static raw(message: string) {
+    const clean = stripAnsi(message);
+
+    const lines = clean.split(/\r?\n/);
+
+    for (const line of lines) {
+      if (!line.trim()) {
+        continue;
+      }
+
+      if (line.includes("[ERROR]")) {
+        this.error(line);
+        continue;
+      }
+
+      if (line.includes("[DEBUG]")) {
+        this.debug(line);
+        continue;
+      }
+
+      if (line.includes("[INFO]")) {
+        this.info(line);
+        continue;
+      }
+
+      this.channel.appendLine(line);
     }
+  }
+}
 
-    if (stderr) {
-      outputChannel.appendLine(`Error: ${stderr}`);
-    }
+export async function runCliCommand(
+  command: string,
+  args: string[] = [],
+  options: RunCliOptions = {},
+): Promise<void> {
+  return vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: `Running ${command}`,
+      cancellable: true,
+    },
+    async (_, token) => {
+      return new Promise((resolve, reject) => {
+        CmdrLogger.show();
 
-    if (error) {
-      vscode.window.showErrorMessage(`CMDR Error: ${error.message}`);
-      return;
-    }
+        if (options.clearOutput) {
+          CmdrLogger.clear();
+        }
 
-    if (options?.successMessage) {
-      vscode.window.showInformationMessage(options.successMessage);
-    }
-  });
+        CmdrLogger.info(`Executing: ${command} ${args.join(" ")}`);
+
+        const child: ChildProcessWithoutNullStreams = spawn(command, args, {
+          cwd: options.cwd,
+          env: {
+            ...process.env,
+            ...options.env,
+          },
+          shell: process.platform === "win32",
+        });
+
+        token.onCancellationRequested(() => {
+          child.kill();
+
+          CmdrLogger.error("Process cancelled by user");
+
+          vscode.window.showWarningMessage("CMDR process cancelled");
+
+          reject(new Error("Process cancelled"));
+        });
+
+        child.stdout.on("data", (data: Buffer) => {
+          CmdrLogger.raw(data.toString());
+        });
+
+        child.stderr.on("data", (data: Buffer) => {
+          CmdrLogger.error(data.toString());
+        });
+
+        child.on("error", (error) => {
+          CmdrLogger.error(error.message);
+
+          vscode.window.showErrorMessage(options.errorMessage ?? error.message);
+
+          reject(error);
+        });
+
+        child.on("close", (code) => {
+          if (code === 0) {
+            CmdrLogger.success("Process finished successfully");
+
+            if (!options.silent && options.successMessage) {
+              vscode.window.showInformationMessage(options.successMessage);
+            }
+
+            resolve();
+            return;
+          }
+
+          const error = new Error(`Process exited with code ${code}`);
+
+          CmdrLogger.error(error.message);
+
+          vscode.window.showErrorMessage(options.errorMessage ?? error.message);
+
+          reject(error);
+        });
+      });
+    },
+  );
 }

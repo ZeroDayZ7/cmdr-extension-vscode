@@ -69,11 +69,11 @@
     "cli-helper.submenu": [
       {
         "command": "cli-helper.annotate",
-        "group": "1_modify@1"
+        "group": "1_annotate@1"
       },
       {
         "submenu": "cli-helper.annotateOptions",
-        "group": "1_modify@2"
+        "group": "1_annotate@2"
       },
       {
         "command": "cli-helper.codeRegions",
