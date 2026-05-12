@@ -12,7 +12,7 @@
     "type": "git",
     "url": "https://github.com/ZeroDayZ7/cli-helper-cmdr-extension-vscode"
   },
-  "version": "0.2.21",
+  "version": "0.3.321",
   "engines": {
     "vscode": "^1.116.0"
   },

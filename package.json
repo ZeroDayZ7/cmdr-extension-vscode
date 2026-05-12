@@ -12,7 +12,7 @@
     "type": "git",
     "url": "https://github.com/ZeroDayZ7/cli-helper-cmdr-extension-vscode"
   },
-  "version": "0.2.21",
+  "version": "0.3.321",
   "engines": {
     "vscode": "^1.116.0"
   },
@@ -58,6 +58,14 @@
         "title": "ANT - Annotate Project Path"
       },
       {
+        "command": "cli-helper.annotateVerbose",
+        "title": "ANT - Annotate (Verbose Logging)"
+      },
+      {
+        "command": "cli-helper.annotateDryRun",
+        "title": "ANT - Annotate (Dry Run Preview)"
+      },
+      {
         "command": "cli-helper.codeRegions",
         "title": "REG - Wrap into #regions"
       },
@@ -96,6 +104,10 @@
         "label": "CMDR Tools"
       },
       {
+        "id": "cli-helper.annotateOptions",
+        "label": "ANT - Options & Preview"
+      },
+      {
         "id": "cli-helper.treeFormats",
         "label": "Tree - Special Formats"
       }
@@ -110,15 +122,19 @@
       "cli-helper.submenu": [
         {
           "command": "cli-helper.annotate",
-          "group": "1_main@1"
+          "group": "1_modify@1"
+        },
+        {
+          "submenu": "cli-helper.annotateOptions",
+          "group": "1_modify@2"
         },
         {
           "command": "cli-helper.codeRegions",
-          "group": "1_main@2"
+          "group": "1_modify@3"
         },
         {
           "command": "cli-helper.rmvComments",
-          "group": "1_main@3"
+          "group": "1_modify@4"
         },
         {
           "command": "cli-helper.treeClipboard",
@@ -131,6 +147,16 @@
         {
           "submenu": "cli-helper.treeFormats",
           "group": "3_tree_formats"
+        }
+      ],
+      "cli-helper.annotateOptions": [
+        {
+          "command": "cli-helper.annotateVerbose",
+          "group": "options@1"
+        },
+        {
+          "command": "cli-helper.annotateDryRun",
+          "group": "options@2"
         }
       ],
       "cli-helper.treeFormats": [
