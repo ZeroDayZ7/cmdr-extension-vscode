@@ -96,6 +96,14 @@
       {
         "command": "cli-helper.treeMd",
         "title": "Copy as Markdown"
+      },
+      {
+        "command": "cli-helper.preparePassword",
+        "title": "BS - Prepare Passwords (Default 16)"
+      },
+      {
+        "command": "cli-helper.preparePasswordCustom",
+        "title": "BS - Prepare Passwords (Custom Length)"
       }
     ],
     "submenus": [
@@ -110,6 +118,10 @@
       {
         "id": "cli-helper.treeFormats",
         "label": "Tree - Special Formats"
+      },
+      {
+        "id": "cli-helper.bootstrapOptions",
+        "label": "BS - Prepare Password"
       }
     ],
     "menus": {
@@ -145,8 +157,22 @@
           "group": "2_utils@2"
         },
         {
+          "submenu": "cli-helper.bootstrapOptions",
+          "group": "2_utils@3"
+        },
+        {
           "submenu": "cli-helper.treeFormats",
           "group": "3_tree_formats"
+        }
+      ],
+      "cli-helper.bootstrapOptions": [
+        {
+          "command": "cli-helper.preparePassword",
+          "group": "options@1"
+        },
+        {
+          "command": "cli-helper.preparePasswordCustom",
+          "group": "options@2"
         }
       ],
       "cli-helper.annotateOptions": [

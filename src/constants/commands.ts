@@ -13,6 +13,9 @@ export const COMMANDS = {
   ANNOTATE: "cli-helper.annotate",
   ANNOTATE_VERBOSE: "cli-helper.annotateVerbose",
   ANNOTATE_DRY_RUN: "cli-helper.annotateDryRun",
-  
+
   CODE_REGIONS: "cli-helper.codeRegions",
+
+  PREPARE_PASSWORD: "cli-helper.preparePassword",
+  PREPARE_PASSWORD_CUSTOM: "cli-helper.preparePasswordCustom",
 } as const;
