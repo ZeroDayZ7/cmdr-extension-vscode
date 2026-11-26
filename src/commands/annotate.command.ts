@@ -38,9 +38,7 @@ async function executeAnnotate(uri: vscode.Uri, options: AnnotateOptions = {}) {
       errorMessage: "CMDR: Annotation failed.",
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-
-    vscode.window.showErrorMessage(`CMDR: Annotate error: ${message}`);
+    throw error;
   }
 }
 

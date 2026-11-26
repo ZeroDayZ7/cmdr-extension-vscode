@@ -25,9 +25,7 @@ export function registerRegionsCommand(context: vscode.ExtensionContext) {
           successMessage: "CMDR: Code regions (#region) added successfully.",
         });
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-
-        vscode.window.showErrorMessage(`CMDR: Regions error: ${message}`);
+        throw error;
       }
     },
   );

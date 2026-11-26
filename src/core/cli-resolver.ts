@@ -19,19 +19,24 @@ export function managedCliPath(context: vscode.ExtensionContext): string {
 }
 
 export function findInPath(): string | undefined {
-  const entries = process.env.PATH?.split(path.delimiter) ?? [];
+  const pathValue = process.env.PATH ?? process.env.Path ?? process.env.path ?? "";
+  const entries = pathValue.split(path.delimiter);
 
   for (const entry of entries) {
-    const directory = entry.trim();
+    let directory = entry.trim();
     if (!directory) {
       continue;
     }
+    if (directory.startsWith('"') && directory.endsWith('"')) {
+      directory = directory.slice(1, -1);
+    }
+    directory = path.resolve(directory);
 
     const candidates = process.platform === "win32"
-      ? [executableName(), ...((process.env.PATHEXT ?? ".COM;.EXE;.BAT;.CMD")
+      ? [executableName(), ...(process.env.PATHEXT ?? ".COM;.EXE;.BAT;.CMD")
           .split(";")
           .filter((extension) => extension.trim())
-          .map((extension) => `cmdr${extension.toLowerCase()}`))]
+          .map((extension) => `cmdr${extension.trim().toLowerCase()}`)]
       : [executableName()];
 
     for (const candidateName of candidates) {
@@ -49,6 +54,12 @@ export function findInPath(): string | undefined {
   return undefined;
 }
 
+export function parseCliVersion(stdout: string, stderr = ""): string | undefined {
+  const output = stdout.trim() || stderr.trim();
+  const version = output.split(/\r?\n/, 1)[0]?.trim();
+  return version || undefined;
+}
+
 export async function getCliVersion(location: string): Promise<string | undefined> {
   try {
     const result = await runProcess(location, ["version", "--short"], { timeoutMs: 10_000 });
@@ -56,8 +67,7 @@ export async function getCliVersion(location: string): Promise<string | undefine
       return undefined;
     }
 
-    const version = result.stdout.trim().split(/\r?\n/, 1)[0]?.trim();
-    return version || undefined;
+    return parseCliVersion(result.stdout, result.stderr);
   } catch {
     return undefined;
   }
@@ -98,15 +108,6 @@ export async function resolveCli(context: vscode.ExtensionContext): Promise<CliS
   }
 
   const version = await getCliVersion(location);
-  if (!version) {
-    return {
-      source: configuration.source,
-      available: false,
-      location,
-      message: "CMDR executable exists but could not report its version.",
-    };
-  }
-
   return {
     source: configuration.source,
     available: true,

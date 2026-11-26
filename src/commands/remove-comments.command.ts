@@ -25,9 +25,7 @@ export function registerRemoveCommentsCommand(
           successMessage: "CMDR: Comments removed successfully.",
         });
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-
-        vscode.window.showErrorMessage(`CMDR: RMC error: ${message}`);
+        throw error;
       }
     },
   );

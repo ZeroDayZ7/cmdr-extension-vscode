@@ -9,14 +9,15 @@ export interface ProcessResult {
 export async function runProcess(
   executable: string,
   args: string[],
-  options: { cwd?: string; timeoutMs?: number } = {},
+  options: { cwd?: string; timeoutMs?: number; env?: NodeJS.ProcessEnv; signal?: AbortSignal } = {},
 ): Promise<ProcessResult> {
   return new Promise((resolve, reject) => {
     const child = spawn(executable, args, {
       cwd: options.cwd,
-      env: process.env,
+      env: options.env ? { ...process.env, ...options.env } : process.env,
       shell: false,
       windowsHide: true,
+      signal: options.signal,
     });
 
     let stdout = "";

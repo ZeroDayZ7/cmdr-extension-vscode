@@ -50,8 +50,7 @@ async function executePreparePassword(
       errorMessage: "CMDR: Failed to prepare passwords.",
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    vscode.window.showErrorMessage(`CMDR: Bootstrap error: ${message}`);
+    throw error;
   }
 }
 

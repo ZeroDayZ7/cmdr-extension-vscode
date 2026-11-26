@@ -2,6 +2,8 @@ import { spawn, ChildProcessWithoutNullStreams } from "node:child_process";
 import * as vscode from "vscode";
 import stripAnsi from "strip-ansi";
 import { resolveCli } from "./cli-resolver.js";
+import { getCliConfiguration } from "./cli-config.js";
+import fs from "node:fs";
 
 export interface RunCliOptions {
   cwd?: string;
@@ -112,11 +114,32 @@ export async function runCliCommand(
         const executeCli = (executable: string) => {
           CmdrLogger.show();
 
+          const configuration = getCliConfiguration();
+          const workingDirectory = options.cwd ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
+          CmdrLogger.info(`[CMDR execution] Command requested: ${command}`);
+          CmdrLogger.info(`[CMDR execution] Working directory: ${workingDirectory}`);
+          CmdrLogger.info(`[CMDR execution] Configured source: ${configuration.source}`);
+          CmdrLogger.info(`[CMDR execution] Resolved executable: ${executable}`);
+          CmdrLogger.info(`[CMDR execution] Arguments: ${JSON.stringify(args)}`);
+          if (command === "cmdr" && args[0] === "tree") {
+            CmdrLogger.info(`[CMDR execution] Target URI: ${args[1] ?? ""}`);
+          }
+
           if (options.clearOutput) {
             CmdrLogger.clear();
           }
 
           CmdrLogger.info(`Executing: ${executable} ${args.join(" ")}`);
+          CmdrLogger.info("[CMDR execution] Process started");
+
+          const cwd = options.cwd;
+          if (cwd && (!fs.existsSync(cwd) || !fs.statSync(cwd).isDirectory())) {
+            const error = new Error(`CMDR working directory is invalid: ${cwd}`);
+            CmdrLogger.error(`[CMDR execution] Failure stage: invalid cwd; executable: ${executable}; arguments: ${JSON.stringify(args)}; cwd: ${cwd}`);
+            vscode.window.showErrorMessage(options.errorMessage ?? error.message);
+            reject(error);
+            return;
+          }
 
           const child: ChildProcessWithoutNullStreams = spawn(executable, args, {
             cwd: options.cwd,
@@ -129,6 +152,7 @@ export async function runCliCommand(
           });
 
           let settled = false;
+          let stderrOutput = "";
           const finish = (callback: () => void) => {
             if (settled) {
               return;
@@ -142,6 +166,7 @@ export async function runCliCommand(
                 finish(() => {
                   child.kill();
                   const error = new Error(`CMDR process timed out after ${options.timeoutMs} ms`);
+                  CmdrLogger.error(`[CMDR execution] Failure stage: timeout; executable: ${executable}; arguments: ${JSON.stringify(args)}; exit code: unavailable; timeout: ${options.timeoutMs} ms`);
                   CmdrLogger.error(error.message);
                   vscode.window.showErrorMessage(options.errorMessage ?? error.message);
                   reject(error);
@@ -167,6 +192,7 @@ export async function runCliCommand(
 
           child.stderr.on("data", (data: Buffer) => {
             CmdrLogger.error(data.toString());
+            stderrOutput += data.toString();
           });
 
           child.on("error", (error) => {
@@ -174,7 +200,7 @@ export async function runCliCommand(
               if (timeout) {
                 clearTimeout(timeout);
               }
-              CmdrLogger.error(error.message);
+              CmdrLogger.error(`[CMDR execution] Failure stage: spawn; executable: ${executable}; arguments: ${JSON.stringify(args)}; startup error: ${error.message}`);
               vscode.window.showErrorMessage(options.errorMessage ?? error.message);
               reject(error);
             });
@@ -185,6 +211,7 @@ export async function runCliCommand(
               if (timeout) {
                 clearTimeout(timeout);
               }
+              CmdrLogger.info(`[CMDR execution] Exit code: ${code}`);
 
               if (code === 0) {
                 CmdrLogger.success("Process finished successfully");
@@ -198,6 +225,7 @@ export async function runCliCommand(
               }
 
               const error = new Error(`Process exited with code ${code}`);
+              CmdrLogger.error(`[CMDR execution] Failure stage: process exit; executable: ${executable}; arguments: ${JSON.stringify(args)}; exit code: ${code}; stderr: ${stderrOutput.trim() || "none"}`);
               CmdrLogger.error(error.message);
               vscode.window.showErrorMessage(options.errorMessage ?? error.message);
               reject(error);
