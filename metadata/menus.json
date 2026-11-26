@@ -67,6 +67,10 @@
     {
       "command": "cli-helper.cliUpdate",
       "title": "CMDR: Update Managed CLI"
+    },
+    {
+      "command": "cli-helper.cliConfigure",
+      "title": "CMDR: Configure CLI Source"
     }
   ],
   "configuration": {

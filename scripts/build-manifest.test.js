@@ -27,6 +27,7 @@ test("validates CLI configuration metadata", () => {
   assert.equal(metadata.configuration.properties["cmdr.cli.customPath"].type, "string");
   assert.equal(metadata.configuration.properties["cmdr.cli.autoUpdate"].type, "boolean");
   assert.equal(metadata.configuration.properties["cmdr.cli.versionCheck"].type, "boolean");
+  assert.ok(metadata.commands.some((entry) => entry.command === "cli-helper.cliConfigure"));
 });
 
 test("validates central project metadata", () => {

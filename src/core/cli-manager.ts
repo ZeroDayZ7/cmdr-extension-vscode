@@ -52,6 +52,21 @@ export class CliManager {
     throw new Error(`Unsupported platform: ${process.platform}/${process.arch}`);
   }
 
+  private compareVersions(left: string, right: string): number {
+    const parse = (version: string) => version.replace(/^v/, "").split("-", 1)[0].split(".").map((part) => Number.parseInt(part, 10));
+    const leftParts = parse(left);
+    const rightParts = parse(right);
+
+    for (let index = 0; index < Math.max(leftParts.length, rightParts.length); index += 1) {
+      const difference = (leftParts[index] ?? 0) - (rightParts[index] ?? 0);
+      if (difference !== 0) {
+        return difference;
+      }
+    }
+
+    return 0;
+  }
+
   async checkUpdate(): Promise<CliOperationResult> {
     try {
       const status = await this.getStatus();
@@ -60,7 +75,7 @@ export class CliManager {
       const update: CliUpdateStatus = {
         currentVersion: status.version,
         latestVersion,
-        updateAvailable: Boolean(status.version && status.version !== latestVersion),
+        updateAvailable: Boolean(status.version && this.compareVersions(latestVersion, status.version) > 0),
         releaseTag: release.tag_name,
       };
 

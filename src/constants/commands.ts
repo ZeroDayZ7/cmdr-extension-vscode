@@ -19,6 +19,7 @@ export const COMMANDS = {
   PREPARE_PASSWORD: "cli-helper.preparePassword",
   PREPARE_PASSWORD_CUSTOM: "cli-helper.preparePasswordCustom",
 
+  CLI_CONFIGURE: "cli-helper.cliConfigure",
   CLI_STATUS: "cli-helper.cliStatus",
   CLI_UPDATE_CHECK: "cli-helper.cliUpdateCheck",
   CLI_INSTALL: "cli-helper.cliInstall",

@@ -7,7 +7,7 @@ export function activate(context: vscode.ExtensionContext) {
   registerCommands(context);
 
   const configuration = getCliConfiguration();
-  if (!configuration.versionCheck) {
+  if (!configuration.versionCheck || configuration.source !== "managed") {
     return;
   }
 

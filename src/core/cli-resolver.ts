@@ -19,12 +19,34 @@ export function managedCliPath(context: vscode.ExtensionContext): string {
 }
 
 export function findInPath(): string | undefined {
-  const directory = process.env.PATH?.split(path.delimiter).find((entry) => {
-    const candidate = path.join(entry, executableName());
-    return fs.existsSync(candidate) && fs.statSync(candidate).isFile();
-  });
+  const entries = process.env.PATH?.split(path.delimiter) ?? [];
 
-  return directory ? path.join(directory, executableName()) : undefined;
+  for (const entry of entries) {
+    const directory = entry.trim();
+    if (!directory) {
+      continue;
+    }
+
+    const candidates = process.platform === "win32"
+      ? [executableName(), ...((process.env.PATHEXT ?? ".COM;.EXE;.BAT;.CMD")
+          .split(";")
+          .filter((extension) => extension.trim())
+          .map((extension) => `cmdr${extension.toLowerCase()}`))]
+      : [executableName()];
+
+    for (const candidateName of candidates) {
+      const candidate = path.join(directory, candidateName);
+      try {
+        if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+          return candidate;
+        }
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  return undefined;
 }
 
 export async function getCliVersion(location: string): Promise<string | undefined> {
