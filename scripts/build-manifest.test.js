@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
   buildManifest,
@@ -16,6 +17,17 @@ function writeJson(directory, name, value) {
   fs.writeFileSync(filePath, JSON.stringify(value, null, 2), "utf8");
   return filePath;
 }
+
+test("validates CLI configuration metadata", () => {
+  const scriptsDirectory = path.dirname(fileURLToPath(import.meta.url));
+  const metadata = JSON.parse(fs.readFileSync(path.join(scriptsDirectory, "../metadata/menus.json"), "utf8"));
+
+  assert.equal(metadata.configuration.properties["cmdr.cli.source"].type, "string");
+  assert.deepEqual(metadata.configuration.properties["cmdr.cli.source"].enum, ["path", "custom", "managed"]);
+  assert.equal(metadata.configuration.properties["cmdr.cli.customPath"].type, "string");
+  assert.equal(metadata.configuration.properties["cmdr.cli.autoUpdate"].type, "boolean");
+  assert.equal(metadata.configuration.properties["cmdr.cli.versionCheck"].type, "boolean");
+});
 
 test("validates central project metadata", () => {
   assert.deepEqual(

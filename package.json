@@ -44,11 +44,15 @@
     "build:full": "npm run package:vsix"
   },
   "dependencies": {
-    "strip-ansi": "^6.0.1"
+    "adm-zip": "^0.6.1",
+    "strip-ansi": "^6.0.1",
+    "tar": "^7.5.23"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.8",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.19.17",
+    "@types/tar": "^6.1.13",
     "@types/vscode": "^1.116.0",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
@@ -112,8 +116,59 @@
       {
         "command": "cli-helper.preparePasswordCustom",
         "title": "BS - Prepare Passwords (Custom Length)"
+      },
+      {
+        "command": "cli-helper.cliStatus",
+        "title": "CMDR: CLI Status"
+      },
+      {
+        "command": "cli-helper.cliUpdateCheck",
+        "title": "CMDR: Check CLI Updates"
+      },
+      {
+        "command": "cli-helper.cliInstall",
+        "title": "CMDR: Install Managed CLI"
+      },
+      {
+        "command": "cli-helper.cliUpdate",
+        "title": "CMDR: Update Managed CLI"
       }
     ],
+    "configuration": {
+      "title": "CMDR",
+      "properties": {
+        "cmdr.cli.source": {
+          "type": "string",
+          "enum": [
+            "path",
+            "custom",
+            "managed"
+          ],
+          "enumDescriptions": [
+            "Find CMDR in the system PATH.",
+            "Use a custom executable path.",
+            "Use the CLI installation managed by this extension."
+          ],
+          "default": "path",
+          "description": "Selects how the CMDR executable is resolved."
+        },
+        "cmdr.cli.customPath": {
+          "type": "string",
+          "default": "",
+          "description": "Full path to a custom CMDR executable."
+        },
+        "cmdr.cli.autoUpdate": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically install managed CMDR updates when available."
+        },
+        "cmdr.cli.versionCheck": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check managed CMDR versions periodically."
+        }
+      }
+    },
     "submenus": [
       {
         "id": "cli-helper.submenu",

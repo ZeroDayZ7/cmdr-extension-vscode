@@ -1,6 +1,7 @@
 import { spawn, ChildProcessWithoutNullStreams } from "node:child_process";
 import * as vscode from "vscode";
 import stripAnsi from "strip-ansi";
+import { resolveCli } from "./cli-resolver.js";
 
 export interface RunCliOptions {
   cwd?: string;
@@ -83,6 +84,12 @@ class CmdrLogger {
   }
 }
 
+let extensionContext: vscode.ExtensionContext | undefined;
+
+export function setCliExtensionContext(context: vscode.ExtensionContext): void {
+  extensionContext = context;
+}
+
 export async function runCliCommand(
   command: string,
   args: string[] = [],
@@ -96,69 +103,81 @@ export async function runCliCommand(
     },
     async (_, token) => {
       return new Promise((resolve, reject) => {
-        CmdrLogger.show();
-
-        if (options.clearOutput) {
-          CmdrLogger.clear();
+        if (!extensionContext) {
+          reject(new Error("CMDR extension context is not initialized."));
+          return;
         }
 
-        CmdrLogger.info(`Executing: ${command} ${args.join(" ")}`);
+        const executeCli = (executable: string) => {
+          CmdrLogger.show();
 
-        const child: ChildProcessWithoutNullStreams = spawn(command, args, {
-          cwd: options.cwd,
-          env: {
-            ...process.env,
-            ...options.env,
-          },
-          shell: process.platform === "win32",
-        });
+          if (options.clearOutput) {
+            CmdrLogger.clear();
+          }
 
-        token.onCancellationRequested(() => {
-          child.kill();
+          CmdrLogger.info(`Executing: ${executable} ${args.join(" ")}`);
 
-          CmdrLogger.error("Process cancelled by user");
+          const child: ChildProcessWithoutNullStreams = spawn(executable, args, {
+            cwd: options.cwd,
+            env: {
+              ...process.env,
+              ...options.env,
+            },
+            shell: false,
+            windowsHide: true,
+          });
 
-          vscode.window.showWarningMessage("CMDR process cancelled");
+          token.onCancellationRequested(() => {
+            child.kill();
+            CmdrLogger.error("Process cancelled by user");
+            vscode.window.showWarningMessage("CMDR process cancelled");
+            reject(new Error("Process cancelled"));
+          });
 
-          reject(new Error("Process cancelled"));
-        });
+          child.stdout.on("data", (data: Buffer) => {
+            CmdrLogger.raw(data.toString());
+          });
 
-        child.stdout.on("data", (data: Buffer) => {
-          CmdrLogger.raw(data.toString());
-        });
+          child.stderr.on("data", (data: Buffer) => {
+            CmdrLogger.error(data.toString());
+          });
 
-        child.stderr.on("data", (data: Buffer) => {
-          CmdrLogger.error(data.toString());
-        });
+          child.on("error", (error) => {
+            CmdrLogger.error(error.message);
+            vscode.window.showErrorMessage(options.errorMessage ?? error.message);
+            reject(error);
+          });
 
-        child.on("error", (error) => {
-          CmdrLogger.error(error.message);
+          child.on("close", (code) => {
+            if (code === 0) {
+              CmdrLogger.success("Process finished successfully");
 
-          vscode.window.showErrorMessage(options.errorMessage ?? error.message);
+              if (!options.silent && options.successMessage) {
+                vscode.window.showInformationMessage(options.successMessage);
+              }
 
-          reject(error);
-        });
-
-        child.on("close", (code) => {
-          if (code === 0) {
-            CmdrLogger.success("Process finished successfully");
-
-            if (!options.silent && options.successMessage) {
-              vscode.window.showInformationMessage(options.successMessage);
+              resolve();
+              return;
             }
 
-            resolve();
+            const error = new Error(`Process exited with code ${code}`);
+            CmdrLogger.error(error.message);
+            vscode.window.showErrorMessage(options.errorMessage ?? error.message);
+            reject(error);
+          });
+        };
+
+        resolveCli(extensionContext).then((status) => {
+          if (!status.available || !status.location) {
+            const error = new Error(status.message ?? "CMDR executable is unavailable.");
+            CmdrLogger.error(error.message);
+            vscode.window.showErrorMessage(options.errorMessage ?? error.message);
+            reject(error);
             return;
           }
 
-          const error = new Error(`Process exited with code ${code}`);
-
-          CmdrLogger.error(error.message);
-
-          vscode.window.showErrorMessage(options.errorMessage ?? error.message);
-
-          reject(error);
-        });
+          executeCli(status.location);
+        }).catch(reject);
       });
     },
   );
