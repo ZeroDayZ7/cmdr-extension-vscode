@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const scriptsDirectory = path.dirname(fileURLToPath(import.meta.url));
 const templatePath = path.join(scriptsDirectory, "../package.template.json");
 const metadataPath = path.join(scriptsDirectory, "../metadata/menus.json");
+const projectMetadataPath = path.join(scriptsDirectory, "../metadata/project.json");
 const outputPath = path.join(scriptsDirectory, "../package.json");
 
 export function readJson(filePath) {
@@ -16,6 +17,28 @@ export function readJson(filePath) {
     }
     throw error;
   }
+}
+
+export function validateProjectMetadata(project) {
+  if (!project || typeof project !== "object" || Array.isArray(project)) {
+    throw new Error("metadata/project.json must be a JSON object");
+  }
+
+  for (const field of ["name", "displayName", "version"]) {
+    if (typeof project[field] !== "string" || !project[field].trim()) {
+      throw new Error(`metadata/project.json must contain a non-empty ${field}`);
+    }
+  }
+
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(project.name)) {
+    throw new Error("metadata/project.json name must be a lowercase npm package name");
+  }
+
+  if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(project.version)) {
+    throw new Error("metadata/project.json version must use semantic version format");
+  }
+
+  return project;
 }
 
 export function mergeUniqueBy(arrays, keyName) {
@@ -154,11 +177,13 @@ export function buildManifest(options = {}) {
   const paths = {
     templatePath: options.templatePath || templatePath,
     metadataPath: options.metadataPath || metadataPath,
+    projectMetadataPath: options.projectMetadataPath || projectMetadataPath,
     outputPath: options.outputPath || outputPath,
   };
 
   const template = readJson(paths.templatePath);
   const metadata = readJson(paths.metadataPath);
+  const project = validateProjectMetadata(readJson(paths.projectMetadataPath));
 
   if (!template || typeof template !== "object" || Array.isArray(template)) {
     throw new Error("Package template must be a JSON object");
@@ -167,8 +192,20 @@ export function buildManifest(options = {}) {
     throw new Error("Manifest metadata must be a JSON object");
   }
 
+  for (const field of ["name", "displayName", "version"]) {
+    if (Object.prototype.hasOwnProperty.call(template, field)) {
+      throw new Error(`package.template.json must not define ${field}; it is managed by metadata/project.json`);
+    }
+  }
+
   const contributes = validateContributes(mergeContributes(template.contributes, metadata));
-  const output = { ...template, contributes };
+  const output = {
+    name: project.name,
+    displayName: project.displayName,
+    ...template,
+    version: project.version,
+    contributes,
+  };
 
   fs.mkdirSync(path.dirname(paths.outputPath), { recursive: true });
   fs.writeFileSync(paths.outputPath, `${JSON.stringify(output, null, 2)}\n`, "utf8");

@@ -8,6 +8,7 @@ import {
   buildManifest,
   mergeContributes,
   validateContributes,
+  validateProjectMetadata,
 } from "./build-manifest.js";
 
 function writeJson(directory, name, value) {
@@ -15,6 +16,49 @@ function writeJson(directory, name, value) {
   fs.writeFileSync(filePath, JSON.stringify(value, null, 2), "utf8");
   return filePath;
 }
+
+test("validates central project metadata", () => {
+  assert.deepEqual(
+    validateProjectMetadata({ name: "cli-helper", displayName: "CMDR Tools", version: "0.3.322" }),
+    { name: "cli-helper", displayName: "CMDR Tools", version: "0.3.322" },
+  );
+
+  assert.throws(
+    () => validateProjectMetadata({ name: "cli-helper", displayName: "CMDR Tools" }),
+    /non-empty version/,
+  );
+  assert.throws(
+    () => validateProjectMetadata({ name: "CLI Helper", displayName: "CMDR Tools", version: "0.3.322" }),
+    /lowercase npm package name/,
+  );
+  assert.throws(
+    () => validateProjectMetadata({ name: "cli-helper", displayName: "CMDR Tools", version: "latest" }),
+    /semantic version format/,
+  );
+});
+
+test("rejects project identity duplicated in template", () => {
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), "cmdr-project-identity-"));
+  const templatePath = writeJson(temporary, "package.template.json", {
+    name: "old-name",
+    description: "Test",
+  });
+  const projectPath = writeJson(temporary, "project.json", {
+    name: "cli-helper",
+    displayName: "CMDR Tools",
+    version: "0.3.322",
+  });
+  const metadataPath = writeJson(temporary, "menus.json", {
+    commands: [],
+    submenus: [],
+    menus: {},
+  });
+
+  assert.throws(
+    () => buildManifest({ templatePath, metadataPath, projectMetadataPath: projectPath, outputPath: path.join(temporary, "package.json") }),
+    /must not define name/,
+  );
+});
 
 test("merges template and metadata contributes without losing template sections", () => {
   const merged = mergeContributes(
@@ -116,7 +160,11 @@ test("rejects malformed command and submenu entries", () => {
 test("generates package.json from valid template and metadata", () => {
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), "cmdr-manifest-"));
   const templatePath = writeJson(temporary, "package.template.json", {
+    description: "Test extension",
+  });
+  const projectPath = writeJson(temporary, "project.json", {
     name: "cli-helper",
+    displayName: "CMDR Tools",
     version: "1.2.3",
   });
   const metadataPath = writeJson(temporary, "menus.json", {
@@ -129,11 +177,38 @@ test("generates package.json from valid template and metadata", () => {
   });
   const outputPath = path.join(temporary, "package.json");
 
-  buildManifest({ templatePath, metadataPath, outputPath });
+  buildManifest({ templatePath, metadataPath, projectMetadataPath: projectPath, outputPath });
 
   const output = JSON.parse(fs.readFileSync(outputPath, "utf8"));
+  assert.equal(output.name, "cli-helper");
+  assert.equal(output.displayName, "CMDR Tools");
   assert.equal(output.version, "1.2.3");
   assert.equal(output.contributes.commands[0].command, "cli-helper.test");
+});
+
+test("regenerates package.json after version changes in project metadata only", () => {
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), "cmdr-project-version-"));
+  const templatePath = writeJson(temporary, "package.template.json", {
+    description: "Test",
+  });
+  const projectPath = writeJson(temporary, "project.json", {
+    name: "cli-helper",
+    displayName: "CMDR Tools",
+    version: "0.3.323",
+  });
+  const metadataPath = writeJson(temporary, "menus.json", {
+    commands: [],
+    submenus: [],
+    menus: {},
+  });
+  const outputPath = path.join(temporary, "package.json");
+
+  buildManifest({ templatePath, metadataPath, projectMetadataPath: projectPath, outputPath });
+
+  const output = JSON.parse(fs.readFileSync(outputPath, "utf8"));
+  assert.equal(output.name, "cli-helper");
+  assert.equal(output.displayName, "CMDR Tools");
+  assert.equal(output.version, "0.3.323");
 });
 
 test("buildManifest rejects invalid JSON", () => {
