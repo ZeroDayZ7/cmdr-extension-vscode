@@ -10,7 +10,7 @@
     "LICENSE": true,
     "package-lock.json": true,
     // "README.md": true,
-    "tsconfig.json": true,
+    // "tsconfig.json": true,
     "vsc-extension-quickstart.md": true,
     "**/node_modules/": true
   },

@@ -1,4 +1,4 @@
-# CMDR Helper Extension v0.2.2
+# CMDR Helper Extension v0.3.322
 
 A powerful VS Code integration for the **CMDR CLI** toolkit, designed to automate repetitive development tasks directly from your workspace.
 

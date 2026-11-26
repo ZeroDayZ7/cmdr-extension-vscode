@@ -2,8 +2,8 @@
 
 import * as vscode from "vscode";
 
-import { runCliCommand } from "../core/run-cli";
-import { COMMANDS } from "../constants/commands";
+import { runCliCommand } from "../core/run-cli.js";
+import { COMMANDS } from "../constants/commands.js";
 
 async function runTreeCommand(uri: vscode.Uri, format?: string) {
   const targetPath = uri

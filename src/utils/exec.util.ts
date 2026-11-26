@@ -1,6 +1,6 @@
 // src/utils/exec.util.ts
 
-import { exec } from "child_process";
+import { exec } from "node:child_process";
 
 export function execAsync(
   command: string,

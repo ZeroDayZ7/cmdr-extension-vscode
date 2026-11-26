@@ -1,14 +1,43 @@
+# Development and editor files
 .vscode/**
 .vscode-test/**
-out/**
-node_modules/**
-src/**
+.git/**
 .gitignore
+.gitattributes
 .yarnrc
+
+# Source and build tooling
+src/**
+scripts/**
+metadata/**
+package.template.json
+package.template.*.json
 esbuild.js
-vsc-extension-quickstart.md
 **/tsconfig.json
 **/eslint.config.mjs
+**/*.tsbuildinfo
+
+# Tests and compiled test output
+out/**
+**/*.test.js
+**/*.test.ts
+**/*.spec.js
+**/*.spec.ts
+.vscode-test.*
+
+# Dependencies and generated maps
+node_modules/**
 **/*.map
-**/*.ts
-**/.vscode-test.*
+
+# Temporary, generated and package artifacts
+combined.txt
+*.patch
+*.vsix
+assets/**/combined.txt
+build/**
+temp/**
+dist/**/*.map
+
+# Developer-only documentation
+vsc-extension-quickstart.md
+docs/build.md

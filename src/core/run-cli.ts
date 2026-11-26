@@ -1,4 +1,4 @@
-import { spawn, ChildProcessWithoutNullStreams } from "child_process";
+import { spawn, ChildProcessWithoutNullStreams } from "node:child_process";
 import * as vscode from "vscode";
 import stripAnsi from "strip-ansi";
 

@@ -1,9 +1,9 @@
 // cmdr: cli-helper/src/commands/annotate.command.ts
 
 import * as vscode from "vscode";
-import { runCliCommand } from "../core/run-cli";
-import { COMMANDS } from "../constants/commands";
-import { getCliTargetFlag } from "../utils/path.util";
+import { runCliCommand } from "../core/run-cli.js";
+import { COMMANDS } from "../constants/commands.js";
+import { getCliTargetFlag } from "../utils/path.util.js";
 
 interface AnnotateOptions {
   verbose?: boolean;
