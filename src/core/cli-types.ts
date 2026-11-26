@@ -9,6 +9,7 @@ export interface CliStatus {
 }
 
 export interface CliUpdateStatus {
+  installed: boolean;
   currentVersion?: string;
   latestVersion?: string;
   updateAvailable: boolean;

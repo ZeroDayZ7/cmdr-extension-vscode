@@ -15,7 +15,7 @@ import {
 } from "./cli-resolver.js";
 import type { CliOperationResult, CliStatus, CliUpdateStatus } from "./cli-types.js";
 
-const RELEASES_URL = "https://api.github.com/repos/ZeroDayZ7/cmdr/releases/latest";
+const RELEASES_API_BASE = "https://api.github.com/repos";
 const MAX_RELEASE_BYTES = 4 << 20;
 const MAX_ARCHIVE_BYTES = 128 << 20;
 
@@ -73,20 +73,33 @@ export class CliManager {
       const release = await this.fetchRelease();
       const latestVersion = release.tag_name.replace(/^v/, "");
       const update: CliUpdateStatus = {
+        installed: status.available,
         currentVersion: status.version,
         latestVersion,
         updateAvailable: Boolean(status.version && this.compareVersions(latestVersion, status.version) > 0),
         releaseTag: release.tag_name,
       };
 
-      return { success: true, status, update, message: update.updateAvailable ? "A CMDR update is available." : "CMDR is up to date." };
+      const message = !status.available
+        ? "CMDR is not installed or unavailable. Install it before checking updates."
+        : update.updateAvailable
+          ? "A CMDR update is available."
+          : "CMDR is up to date.";
+
+      return { success: true, status, update, message };
     } catch (error) {
       return { success: false, message: error instanceof Error ? error.message : String(error) };
     }
   }
 
   private async fetchRelease(): Promise<Release> {
-    const response = await this.fetchImpl(RELEASES_URL, {
+    const repository = getCliConfiguration().githubRepository.trim();
+    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) {
+      throw new Error("GitHub repository must use the owner/repository format.");
+    }
+
+    const releasesUrl = `${RELEASES_API_BASE}/${repository}/releases/latest`;
+    const response = await this.fetchImpl(releasesUrl, {
       headers: { Accept: "application/vnd.github+json", "User-Agent": "cmdr-vscode-extension" },
     });
 

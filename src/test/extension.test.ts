@@ -12,4 +12,12 @@ suite('Extension Test Suite', () => {
 		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
 		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
 	});
+
+	test('activates extension and executes CLI Settings command', async () => {
+		const extension = vscode.extensions.getExtension("zerodayz7.cli-helper");
+		assert.ok(extension, "CMDR Tools extension must be available");
+		await extension.activate();
+		assert.strictEqual(extension.isActive, true);
+		await vscode.commands.executeCommand("cli-helper.cliSettings");
+	});
 });

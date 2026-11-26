@@ -10,6 +10,7 @@ export interface RunCliOptions {
   env?: NodeJS.ProcessEnv;
   silent?: boolean;
   clearOutput?: boolean;
+  timeoutMs?: number;
 }
 
 enum LogLevel {
@@ -127,11 +128,37 @@ export async function runCliCommand(
             windowsHide: true,
           });
 
+          let settled = false;
+          const finish = (callback: () => void) => {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            callback();
+          };
+
+          const timeout = options.timeoutMs
+            ? setTimeout(() => {
+                finish(() => {
+                  child.kill();
+                  const error = new Error(`CMDR process timed out after ${options.timeoutMs} ms`);
+                  CmdrLogger.error(error.message);
+                  vscode.window.showErrorMessage(options.errorMessage ?? error.message);
+                  reject(error);
+                });
+              }, options.timeoutMs)
+            : undefined;
+
           token.onCancellationRequested(() => {
-            child.kill();
-            CmdrLogger.error("Process cancelled by user");
-            vscode.window.showWarningMessage("CMDR process cancelled");
-            reject(new Error("Process cancelled"));
+            finish(() => {
+              if (timeout) {
+                clearTimeout(timeout);
+              }
+              child.kill();
+              CmdrLogger.error("Process cancelled by user");
+              vscode.window.showWarningMessage("CMDR process cancelled");
+              reject(new Error("Process cancelled"));
+            });
           });
 
           child.stdout.on("data", (data: Buffer) => {
@@ -143,27 +170,38 @@ export async function runCliCommand(
           });
 
           child.on("error", (error) => {
-            CmdrLogger.error(error.message);
-            vscode.window.showErrorMessage(options.errorMessage ?? error.message);
-            reject(error);
+            finish(() => {
+              if (timeout) {
+                clearTimeout(timeout);
+              }
+              CmdrLogger.error(error.message);
+              vscode.window.showErrorMessage(options.errorMessage ?? error.message);
+              reject(error);
+            });
           });
 
           child.on("close", (code) => {
-            if (code === 0) {
-              CmdrLogger.success("Process finished successfully");
-
-              if (!options.silent && options.successMessage) {
-                vscode.window.showInformationMessage(options.successMessage);
+            finish(() => {
+              if (timeout) {
+                clearTimeout(timeout);
               }
 
-              resolve();
-              return;
-            }
+              if (code === 0) {
+                CmdrLogger.success("Process finished successfully");
 
-            const error = new Error(`Process exited with code ${code}`);
-            CmdrLogger.error(error.message);
-            vscode.window.showErrorMessage(options.errorMessage ?? error.message);
-            reject(error);
+                if (!options.silent && options.successMessage) {
+                  vscode.window.showInformationMessage(options.successMessage);
+                }
+
+                resolve();
+                return;
+              }
+
+              const error = new Error(`Process exited with code ${code}`);
+              CmdrLogger.error(error.message);
+              vscode.window.showErrorMessage(options.errorMessage ?? error.message);
+              reject(error);
+            });
           });
         };
 

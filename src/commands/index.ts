@@ -9,8 +9,10 @@ import { registerTreeCommands } from "./tree.command.js";
 import { registerRegionsCommand } from "./regions.command.js";
 import { registerBootstrapCommands } from "./bootstrap.command.js";
 import { registerCliCommands } from "./cli.command.js";
+import { logCommand } from "../core/diagnostics.js";
 
-export function registerCommands(context: vscode.ExtensionContext) {
+export function registerCommands(context: vscode.ExtensionContext): void {
+  logCommand("command registration started");
   registerAnnotateCommand(context);
   registerFCCommand(context);
   registerRemoveCommentsCommand(context);
@@ -18,4 +20,5 @@ export function registerCommands(context: vscode.ExtensionContext) {
   registerRegionsCommand(context);
   registerBootstrapCommands(context);
   registerCliCommands(context);
+  logCommand("all command registrations completed");
 }

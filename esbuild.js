@@ -28,6 +28,9 @@ async function main() {
     minify: production,
     sourcemap: !production,
     sourcesContent: false,
+    banner: {
+      js: 'import { createRequire } from "node:module";\nconst require = createRequire(import.meta.url);',
+    },
     platform: "node",
     target: "node20",
     outfile: "dist/extension.js",

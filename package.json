@@ -19,7 +19,27 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:cli-helper.annotate",
+    "onCommand:cli-helper.annotateVerbose",
+    "onCommand:cli-helper.annotateDryRun",
+    "onCommand:cli-helper.codeRegions",
+    "onCommand:cli-helper.rmvComments",
+    "onCommand:cli-helper.treeClipboard",
+    "onCommand:cli-helper.fcDart",
+    "onCommand:cli-helper.treeAscii",
+    "onCommand:cli-helper.treeJson",
+    "onCommand:cli-helper.treeCsv",
+    "onCommand:cli-helper.treeMd",
+    "onCommand:cli-helper.preparePassword",
+    "onCommand:cli-helper.preparePasswordCustom",
+    "onCommand:cli-helper.cliStatus",
+    "onCommand:cli-helper.cliUpdateCheck",
+    "onCommand:cli-helper.cliInstall",
+    "onCommand:cli-helper.cliUpdate",
+    "onCommand:cli-helper.cliConfigure",
+    "onCommand:cli-helper.cliSettings"
+  ],
   "main": "./dist/extension.js",
   "scripts": {
     "gen-manifest": "node scripts/build-manifest.js",
@@ -136,6 +156,10 @@
       {
         "command": "cli-helper.cliConfigure",
         "title": "CMDR: Configure CLI Source"
+      },
+      {
+        "command": "cli-helper.cliSettings",
+        "title": "CMDR: CLI Settings"
       }
     ],
     "configuration": {
@@ -170,6 +194,13 @@
           "type": "boolean",
           "default": true,
           "description": "Check managed CMDR versions periodically."
+        },
+        "cmdr.cli.githubRepository": {
+          "type": "string",
+          "default": "ZeroDayZ7/cmdr",
+          "pattern": "^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$",
+          "patternErrorMessage": "Use the owner/repository format, for example ZeroDayZ7/cmdr.",
+          "description": "GitHub owner and repository used for stable CMDR releases."
         }
       }
     },

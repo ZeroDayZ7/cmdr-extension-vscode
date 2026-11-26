@@ -18,6 +18,47 @@ function writeJson(directory, name, value) {
   return filePath;
 }
 
+test("every contributed command has explicit activation and a source registration", () => {
+  const scriptsDirectory = path.dirname(fileURLToPath(import.meta.url));
+  const rootDirectory = path.join(scriptsDirectory, "..");
+  const packageJson = JSON.parse(fs.readFileSync(path.join(rootDirectory, "package.json"), "utf8"));
+  const contributedIds = packageJson.contributes.commands.map((entry) => entry.command);
+  const activationEvents = new Set(packageJson.activationEvents);
+
+  const constantsSource = fs.readFileSync(path.join(rootDirectory, "src/constants/commands.ts"), "utf8");
+  const commandSources = [
+    "src/commands/annotate.command.ts",
+    "src/commands/fc.command.ts",
+    "src/commands/remove-comments.command.ts",
+    "src/commands/tree.command.ts",
+    "src/commands/regions.command.ts",
+    "src/commands/bootstrap.command.ts",
+    "src/commands/cli.command.ts",
+  ].map((relativePath) => fs.readFileSync(path.join(rootDirectory, relativePath), "utf8")).join("\n");
+
+  for (const commandId of contributedIds) {
+    assert.ok(activationEvents.has(`onCommand:${commandId}`), `missing activation event for ${commandId}`);
+    const constantMatch = constantsSource.match(new RegExp("\\b([A-Z0-9_]+):\\s*\\\"" + commandId.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&") + "\\\""));
+    assert.ok(constantMatch, `missing command constant for ${commandId}`);
+    assert.ok(commandSources.includes(constantMatch[1]), `missing source registration handler for ${commandId} (${constantMatch[1]})`);
+  }
+});
+
+test("CLI settings webview has panel, message, status, and disposal handlers", () => {
+  const scriptsDirectory = path.dirname(fileURLToPath(import.meta.url));
+  const panelSource = fs.readFileSync(path.join(scriptsDirectory, "../src/webview/cli-settings-panel.ts"), "utf8");
+  for (const requiredFragment of [
+    "createWebviewPanel",
+    "onDidReceiveMessage",
+    "onDidDispose",
+    "private async sendStatus",
+    "private api(): CliApi",
+    "private getHtml(): string",
+  ]) {
+    assert.ok(panelSource.includes(requiredFragment), `CLI settings panel missing ${requiredFragment}`);
+  }
+});
+
 test("validates CLI configuration metadata", () => {
   const scriptsDirectory = path.dirname(fileURLToPath(import.meta.url));
   const metadata = JSON.parse(fs.readFileSync(path.join(scriptsDirectory, "../metadata/menus.json"), "utf8"));

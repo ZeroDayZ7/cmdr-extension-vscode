@@ -22,9 +22,10 @@ export class CliApi {
     const current = this.getConfiguration();
     await updateCliConfiguration(
       configuration.source ?? current.source,
-      configuration.customPath,
-      configuration.autoUpdate,
-      configuration.versionCheck,
+      configuration.customPath ?? current.customPath,
+      configuration.githubRepository ?? current.githubRepository,
+      configuration.autoUpdate ?? current.autoUpdate,
+      configuration.versionCheck ?? current.versionCheck,
     );
   }
 

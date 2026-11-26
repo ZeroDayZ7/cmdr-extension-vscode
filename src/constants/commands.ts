@@ -24,4 +24,5 @@ export const COMMANDS = {
   CLI_UPDATE_CHECK: "cli-helper.cliUpdateCheck",
   CLI_INSTALL: "cli-helper.cliInstall",
   CLI_UPDATE: "cli-helper.cliUpdate",
+  CLI_SETTINGS: "cli-helper.cliSettings",
 } as const;
