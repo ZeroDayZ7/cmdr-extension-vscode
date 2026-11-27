@@ -352,3 +352,19 @@ test("all contributed commands use the CMDR category with clean titles", () => {
   assert.ok(!metadata.submenus.some((entry) => entry.id === "cli-helper.bootstrapOptions"));
   assert.ok(!JSON.stringify(metadata.menus).includes("cli-helper.bootstrapOptions"));
 });
+
+test("documentation and package metadata describe implemented functionality", () => {
+  const scriptsDirectory = path.dirname(fileURLToPath(import.meta.url));
+  const rootDirectory = path.join(scriptsDirectory, "..");
+  const readme = fs.readFileSync(path.join(rootDirectory, "README.md"), "utf8");
+  const changelog = fs.readFileSync(path.join(rootDirectory, "CHANGELOG.md"), "utf8");
+  const template = JSON.parse(fs.readFileSync(path.join(rootDirectory, "package.template.json"), "utf8"));
+  const packageJson = JSON.parse(fs.readFileSync(path.join(rootDirectory, "package.json"), "utf8"));
+
+  assert.ok(readme.includes("CMDR Tools"));
+  assert.ok(readme.includes("Command Palette"));
+  assert.doesNotMatch(readme, /Tree to Clipboard \(Pro\)|\bPremium\b|\bPaid\b|\bSubscription\b/i);
+  assert.doesNotMatch(changelog, /\b(Pro|Premium|Paid|Subscription)\b/i);
+  assert.equal(template.description, "VS Code integration for CMDR CLI file tools, project utilities, settings, and managed updates.");
+  assert.equal(packageJson.description, template.description);
+});

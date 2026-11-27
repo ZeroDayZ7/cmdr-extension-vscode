@@ -1,25 +1,80 @@
-# CMDR Helper Extension
+# CMDR Tools
 
-A powerful VS Code integration for the **CMDR CLI** toolkit, designed to automate repetitive development tasks directly from your workspace.
+CMDR Tools integrates the CMDR command-line toolkit into Visual Studio Code. It provides Explorer context-menu actions, Command Palette commands, CLI status and source management, managed installation/update controls, and a settings Webview.
 
-### Key Features
+## Features
 
-* **Code Regions (#region)** – Automatically wraps functions in your code with `#region` tags for better collapse/expand organization.
-* **Tree to Clipboard (Pro)** – Generates and copies directory structures to your clipboard in multiple formats: **Plain Text, ASCII, JSON, CSV, or Markdown**.
-* **Annotate Path** – Quickly adds path-based annotations to files or directories for better project documentation.
-* **Remove Comments (RMC)** – Instantly strips comments from a single file or an entire directory to clean up your codebase.
-* **Files Combine (FC)** – Merges multiple files (optimized for Dart/Flutter) into a single document for easier analysis or sharing.
+### File and project operations
 
-### Quick Access
+- Annotate files or directories, with standard, verbose, and dry-run modes.
+- Add `#region` wrappers to code.
+- Remove comments from a selected file or directory.
+- Copy project tree structures as standard, ASCII, JSON, CSV, or Markdown output.
+- Combine files through the CMDR `fc` command.
+- Generate passwords for a JSON file with default or custom lengths.
 
-All tools are available via:
+### CMDR CLI management
 
-1. **Right-click** on any file or folder in the Explorer.
-2. **Command Palette** (`Ctrl+Shift+P`) by searching for "CMDR".
+- Check the resolved CLI status and executable version.
+- Check for stable CMDR CLI updates.
+- Select System PATH, a custom executable, or the managed CMDR installation.
+- Open the managed installation and update controls in a dedicated settings view.
+- Configure automatic managed updates and periodic version checks.
 
----
+## Access
 
-### Requirements
+Commands are available from:
 
-* **CMDR CLI** must be installed and accessible in your system `PATH`.
-* Compatible with **Windows (PowerShell)**, macOS, and Linux.
+- The Explorer context menu under **CMDR Tools**.
+- The Command Palette. Commands use the `CMDR:` category prefix.
+
+Password commands are available in the Command Palette even though they are not placed in the Explorer context menu.
+
+## Requirements
+
+- Visual Studio Code 1.116.0 or newer.
+- Node.js is only required for building or developing the extension from source.
+- A CMDR executable is required for commands that invoke the CLI.
+
+Supported CMDR installation sources:
+
+- System PATH.
+- A custom executable path selected in settings.
+- An extension-managed installation for supported Windows x64 and Linux x64 builds.
+
+CMDR Tools is implemented with Node.js process APIs and does not require PowerShell specifically.
+
+## Installation
+
+Install CMDR Tools from the VS Code Marketplace, or install a generated VSIX package:
+
+```powershell
+code --install-extension cli-helper-<version>.vsix
+```
+
+## CLI Configuration
+
+Open the Command Palette and run:
+
+```text
+CMDR: CLI Settings
+```
+
+The settings view lets you select the CLI source and configure managed update behavior. You can also run `CMDR: Configure CLI Source` to select the source quickly.
+
+For PATH or custom installations, install and update CMDR independently through the corresponding CMDR CLI distribution mechanism.
+
+## Development
+
+```powershell
+npm ci
+npm run gen-manifest
+npm run test:manifest
+npm test
+npm run compile
+```
+
+## Links
+
+- [CMDR CLI repository](https://github.com/ZeroDayZ7/cmdr)
+- [CMDR Tools extension repository](https://github.com/ZeroDayZ7/cli-helper-cmdr-extension-vscode)

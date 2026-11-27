@@ -1,5 +1,5 @@
 {
-  "description": "A developer productivity tool for code cleaning via CMDR CLI.",
+  "description": "VS Code integration for CMDR CLI file tools, project utilities, settings, and managed updates.",
   "license": "Apache-2.0",
   "type": "module",
   "publisher": "ZeroDayZ7",
