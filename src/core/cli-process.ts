@@ -43,10 +43,11 @@ export async function runProcess(
   }
 
   return new Promise((resolve, reject) => {
+    const isWindowsScript = process.platform === "win32" && /\.(cmd|bat)$/i.test(executable);
     const child = spawn(executable, args, {
       cwd: options.cwd,
       env: options.env ? { ...process.env, ...options.env } : process.env,
-      shell: false,
+      shell: isWindowsScript,
       windowsHide: true,
     });
 

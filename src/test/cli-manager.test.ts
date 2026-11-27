@@ -8,6 +8,38 @@ import { findInPath, getCliVersion, parseCliVersion } from "../core/cli-resolver
 import { runProcess } from "../core/cli-process.js";
 import { buildTreeArguments } from "../commands/tree.command.js";
 
+function findNodeExecutable(): string {
+  const npmNode = process.env.npm_node_execpath;
+  if (npmNode && fs.existsSync(npmNode)) {
+    return npmNode;
+  }
+
+  const pathValue = process.env.PATH ?? process.env.Path ?? process.env.path ?? "";
+  for (const directory of pathValue.split(path.delimiter)) {
+    const candidate = path.join(directory.trim().replace(/^"|"$/g, ""), process.platform === "win32" ? "node.exe" : "node");
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+      return candidate;
+    }
+  }
+
+  return process.execPath;
+}
+
+const nodeExecutable = findNodeExecutable();
+
+async function waitForProcessExit(pid: number, timeoutMs = 2_000): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      process.kill(pid, 0);
+    } catch {
+      return true;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  return false;
+}
+
 suite("CMDR CLI unit tests", () => {
   test("findInPath returns undefined when executable is missing", () => {
     const oldPath = process.env.PATH;
@@ -37,7 +69,6 @@ suite("CMDR CLI unit tests", () => {
   });
 
   test("runProcess captures output and exit code", async () => {
-    const nodeExecutable = process.execPath;
     const result = await runProcess(nodeExecutable, ["-e", "process.stdout.write('1.2.3')"], { timeoutMs: 5_000 });
 
     assert.strictEqual(result.exitCode, 0);
@@ -45,7 +76,6 @@ suite("CMDR CLI unit tests", () => {
   });
 
   test("runProcess reports stdout and non-zero exit codes", async () => {
-    const nodeExecutable = process.execPath;
     const result = await runProcess(nodeExecutable, ["-e", "process.stdout.write('ok'); process.stderr.write('warning'); process.exit(7)"]);
 
     assert.strictEqual(result.exitCode, 7);
@@ -61,12 +91,12 @@ suite("CMDR CLI unit tests", () => {
   });
 
   test("runProcess supports executable paths containing spaces", async function () {
-    if (!/node(?:\.exe)?$/i.test(path.basename(process.execPath))) {
+    if (!/node(?:\.exe)?$/i.test(path.basename(nodeExecutable))) {
       this.skip();
     }
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "cmdr path "));
     const executable = path.join(directory, process.platform === "win32" ? "node.exe" : "node");
-    fs.copyFileSync(process.execPath, executable);
+    fs.copyFileSync(nodeExecutable, executable);
     try {
       const result = await runProcess(executable, ["-e", "process.stdout.write('spaced')"]);
       assert.strictEqual(result.exitCode, 0);
@@ -78,14 +108,14 @@ suite("CMDR CLI unit tests", () => {
 
   test("runProcess rejects timeout", async () => {
     await assert.rejects(
-      runProcess(process.execPath, ["-e", "setTimeout(() => {}, 10000)"], { timeoutMs: 100 }),
+      runProcess(nodeExecutable, ["-e", "setTimeout(() => {}, 10000)"], { timeoutMs: 100 }),
       /timed out/,
     );
   });
 
   test("runProcess supports cancellation", async () => {
     const controller = new AbortController();
-    const pending = runProcess(process.execPath, ["-e", "setTimeout(() => {}, 10000)"], { signal: controller.signal });
+    const pending = runProcess(nodeExecutable, ["-e", "setTimeout(() => {}, 10000)"], { signal: controller.signal });
     controller.abort();
     await assert.rejects(pending, /cancel/i);
   });
@@ -94,7 +124,7 @@ suite("CMDR CLI unit tests", () => {
     const controller = new AbortController();
     controller.abort();
     await assert.rejects(
-      runProcess(process.execPath, ["-e", "process.exit(0)"], { signal: controller.signal }),
+      runProcess(nodeExecutable, ["-e", "process.exit(0)"], { signal: controller.signal }),
       /cancel/i,
     );
   });
@@ -103,7 +133,7 @@ suite("CMDR CLI unit tests", () => {
     let streamedStdout = "";
     let streamedStderr = "";
 
-    const result = await runProcess(process.execPath, [
+    const result = await runProcess(nodeExecutable, [
       "-e",
       "process.stdout.write('hello'); process.stderr.write('warning')",
     ], {
@@ -123,7 +153,7 @@ suite("CMDR CLI unit tests", () => {
 
     try {
       await assert.rejects(
-        runProcess(process.execPath, [
+        runProcess(nodeExecutable, [
           "-e",
           `require('fs').writeFileSync(${JSON.stringify(pidFile)}, String(process.pid)); setInterval(() => {}, 1000)`,
         ], { timeoutMs: 1000 }),
@@ -137,7 +167,7 @@ suite("CMDR CLI unit tests", () => {
 
       const pid = Number(fs.readFileSync(pidFile, "utf8"));
       assert.ok(pid > 0);
-      assert.throws(() => process.kill(pid, 0));
+      assert.strictEqual(await waitForProcessExit(pid), true, "timed-out child process should be terminated");
     } finally {
       fs.rmSync(temporary, { recursive: true, force: true });
     }
@@ -149,7 +179,7 @@ suite("CMDR CLI unit tests", () => {
     const controller = new AbortController();
 
     try {
-      const pending = runProcess(process.execPath, [
+      const pending = runProcess(nodeExecutable, [
         "-e",
         `require('fs').writeFileSync(${JSON.stringify(pidFile)}, String(process.pid)); setInterval(() => {}, 1000)`,
       ], { signal: controller.signal });
@@ -163,7 +193,7 @@ suite("CMDR CLI unit tests", () => {
       await new Promise((resolve) => setTimeout(resolve, 700));
       const pid = Number(fs.readFileSync(pidFile, "utf8"));
       assert.ok(pid > 0);
-      assert.throws(() => process.kill(pid, 0));
+      assert.strictEqual(await waitForProcessExit(pid), true, "cancelled child process should be terminated");
     } finally {
       fs.rmSync(temporary, { recursive: true, force: true });
     }
@@ -171,7 +201,7 @@ suite("CMDR CLI unit tests", () => {
 
   test("runProcess settles once when timeout and cancellation occur together", async () => {
     const controller = new AbortController();
-    const pending = runProcess(process.execPath, ["-e", "setInterval(() => {}, 1000)"], {
+    const pending = runProcess(nodeExecutable, ["-e", "setInterval(() => {}, 1000)"], {
       timeoutMs: 100,
       signal: controller.signal,
     });
