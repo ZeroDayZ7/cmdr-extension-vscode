@@ -14,7 +14,7 @@ CMDR Tools integrates the CMDR command-line toolkit into Visual Studio Code. It 
 - **Remove comments** from selected files or directories.
 - **Copy project tree structures** as standard, ASCII, JSON, CSV, or Markdown.
 - **Combine files** through the CMDR `fc` command.
-- **Generate passwords** for JSON files with default or custom lengths.
+- **Generate passwords** for JSON files with default or custom lengths (deprecated).
 
 ### CMDR CLI management
 - Check the resolved CLI status and executable version.
