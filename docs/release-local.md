@@ -255,7 +255,7 @@ Przed wydaniem ustal wersję wyłącznie w `metadata/project.json`. Wówczas uru
 make release
 ```
 
-Komenda najpierw wykonuje `npm run prepare:metadata`, dlatego ręczne uruchamianie generatora przed release nie jest niezbędne. Następnie synchronizowane `package.json` i `package-lock.json` muszą zostać zatwierdzonymi zmianami w Git, a working tree musi być czysty — skrypt nie wykonuje automatycznego commita. Komenda sprawdza również poprawny format wersji, zgodność manifestów, istnienie taga lokalnie i na `origin` oraz tworzy i wypycha anotowany tag `vX.Y.Z`.
+Komenda najpierw wykonuje `npm run prepare:metadata`. Następnie, jeżeli tylko pliki wydania `metadata/project.json`, `package.json` i `package-lock.json` są zmienione, tworzy dla nich jeden commit `chore: release vX.Y.Z`, wypycha go do bieżącej gałęzi i dopiero później tworzy oraz wypycha tag `vX.Y.Z`. Skrypt nie tworzy commitów ani nie stage'uje innych plików użytkownika i zatrzymuje się, gdy working tree zawiera niezwiązane zmiany.
 
 Wypchnięcie taga uruchamia `.github/workflows/release.yml`. GitHub Actions:
 
@@ -489,3 +489,7 @@ npm run package:vsix
 - [ ] Produkcyjny bundle utworzony w `dist/extension.js`.
 - [ ] Zawartość VSIX sprawdzona przez `npx vsce ls`.
 - [ ] Wygenerowany plik VSIX znajduje się w katalogu projektu.
+
+Wersję zmieniasz tylko w `metadata/project.json`. Następnie uruchom `npm run prepare:metadata`, przejrzyj wygenerowane `package.json` i `package-lock.json`, zatwierdź wszystkie zmiany zwykłym commitem i wypchnij gałąź do `origin`. Dopiero wtedy uruchom `make release`.
+
+Komenda `make release` tylko weryfikuje wersje i czystość working tree, a następnie tworzy i wypycha tag `vX.Y.Z`. Nie uruchamia generatora, nie tworzy commitów ani nie wypycha commita gałęzi. Jeśli manifesty nie są zsynchronizowane lub working tree nie jest czysty, release zostaje zatrzymany.

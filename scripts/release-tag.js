@@ -17,46 +17,24 @@ function git(args, options = {}) {
 
 try {
   const projectJson = JSON.parse(fs.readFileSync("metadata/project.json", "utf8"));
+  const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
+  const lockJson = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
   const version = projectJson.version;
 
   if (!/^\d+\.\d+\.\d+$/.test(version)) {
     fail(`metadata/project.json version '${version}' is not a valid vX.Y.Z version.`);
   }
 
-  const initialStatus = git(["status", "--porcelain"], { capture: true });
-  if (initialStatus) {
-    const changedFiles = initialStatus
-      .split(/\r?\n/)
-      .filter(Boolean)
-      .map((line) => line.slice(3));
-
-    const onlyProjectMetadataChanged = changedFiles.length === 1
-      && changedFiles[0] === "metadata/project.json";
-
-    if (!onlyProjectMetadataChanged) {
-      fail("working tree is not clean. Commit or stash all changes, without creating an automatic commit.");
-    }
-  }
-
-  console.log(`Synchronizing generated metadata for ${version}...`);
-  execFileSync("npm", ["run", "prepare:metadata"], {
-    stdio: "inherit",
-    shell: process.platform === "win32",
-  });
-
-  const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  const lockJson = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
-
   if (packageJson.version !== version) {
-    fail(`package.json version '${packageJson.version}' does not match metadata/project.json version '${version}' after synchronization.`);
+    fail(`package.json version '${packageJson.version}' does not match metadata/project.json version '${version}'. Run 'npm run prepare:metadata', review the generated changes, commit and push them, then run 'make release'.`);
   }
   if (lockJson.version !== version || lockJson.packages?.[""]?.version !== version) {
-    fail(`package-lock.json was not synchronized to version '${version}'.`);
+    fail(`package-lock.json is not synchronized to version '${version}'. Run 'npm run prepare:metadata', commit and push the generated files, then run 'make release'.`);
   }
 
   const status = git(["status", "--porcelain"], { capture: true });
   if (status) {
-    fail("generated metadata is not committed. Commit the synchronized package.json and package-lock.json before release; no automatic commit was created.");
+    fail("working tree is not clean. Commit or stash all changes, including synchronized package.json and package-lock.json, without creating an automatic commit.");
   }
 
   const tag = `v${version}`;
