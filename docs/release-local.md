@@ -249,22 +249,13 @@ cli-helper-0.3.322.vsix
 
 ## Przygotowanie i publikacja wydania
 
-Przed wydaniem ustal wersję wyłącznie w `metadata/project.json`. Wówczas uruchom:
+Przed wydaniem ustal wersję wyłącznie w `metadata/project.json`, wykonaj `make metadata`, a następnie zatwierdź i wypchnij wygenerowane manifesty normalnym commitem. Dopiero potem uruchom:
 
 ```powershell
 make release
 ```
 
-Komenda najpierw wykonuje `npm run prepare:metadata`. Następnie, jeżeli tylko pliki wydania `metadata/project.json`, `package.json` i `package-lock.json` są zmienione, tworzy dla nich jeden commit `chore: release vX.Y.Z`, wypycha go do bieżącej gałęzi i dopiero później tworzy oraz wypycha tag `vX.Y.Z`. Skrypt nie tworzy commitów ani nie stage'uje innych plików użytkownika i zatrzymuje się, gdy working tree zawiera niezwiązane zmiany.
-
-Wypchnięcie taga uruchamia `.github/workflows/release.yml`. GitHub Actions:
-
-1. pobiera repozytorium i instaluje Node.js 22,
-2. wykonuje `npm ci`,
-3. weryfikuje zgodność taga z wersjami w manifestach,
-4. uruchamia testy, kontrolę typów, lint i walidację metadanych,
-5. wykonuje `npm run build:full` i generuje VSIX,
-6. tworzy GitHub Release powiązany z tagiem i załącza plik VSIX.
+Pełny krótki proces znajduje się w [docs/release.md](release.md). `make release` nie synchronizuje metadanych ani nie tworzy commitów — sprawdza wersję i czystość working tree, następnie tworzy tag `vX.Y.Z` i wypycha go do GitHub.
 
 Workflow nie publikuje rozszerzenia na VS Code Marketplace. Gotowy pakiet pobierzesz z strony GitHub Releases repozytorium:
 
@@ -490,6 +481,4 @@ npm run package:vsix
 - [ ] Zawartość VSIX sprawdzona przez `npx vsce ls`.
 - [ ] Wygenerowany plik VSIX znajduje się w katalogu projektu.
 
-Wersję zmieniasz tylko w `metadata/project.json`. Następnie uruchom `npm run prepare:metadata`, przejrzyj wygenerowane `package.json` i `package-lock.json`, zatwierdź wszystkie zmiany zwykłym commitem i wypchnij gałąź do `origin`. Dopiero wtedy uruchom `make release`.
-
-Komenda `make release` tylko weryfikuje wersje i czystość working tree, a następnie tworzy i wypycha tag `vX.Y.Z`. Nie uruchamia generatora, nie tworzy commitów ani nie wypycha commita gałęzi. Jeśli manifesty nie są zsynchronizowane lub working tree nie jest czysty, release zostaje zatrzymany.
+Wersję zmieniasz tylko w `metadata/project.json`, synchronizujesz przez `make metadata`, a wygenerowane manifesty zatwierdzasz zwykłym commitem i wypychasz gałąź. Dopiero potem uruchom `make release`. Pełny krótki proces znajduje się w [docs/release.md](release.md).
