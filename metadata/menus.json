@@ -3,37 +3,37 @@
     {
       "category": "CMDR",
       "command": "cli-helper.annotate",
-      "title": "Annotate Project Path"
+      "title": "ANT - Annotate Project Path"
     },
     {
       "category": "CMDR",
       "command": "cli-helper.annotateVerbose",
-      "title": "Annotate (Verbose Logging)"
+      "title": "ANT - Annotate (Verbose Logging)"
     },
     {
       "category": "CMDR",
       "command": "cli-helper.annotateDryRun",
-      "title": "Annotate (Dry Run Preview)"
+      "title": "ANT - Annotate (Dry Run Preview)"
     },
     {
       "category": "CMDR",
       "command": "cli-helper.codeRegions",
-      "title": "Wrap into #regions"
+      "title": "REG - Wrap into #regions"
     },
     {
       "category": "CMDR",
       "command": "cli-helper.rmvComments",
-      "title": "Remove Comments"
+      "title": "RMC - Remove Comments"
     },
     {
       "category": "CMDR",
       "command": "cli-helper.treeClipboard",
-      "title": "Tree Structure (Standard)"
+      "title": "Tree - Copy Structure (Standard)"
     },
     {
       "category": "CMDR",
       "command": "cli-helper.fcDart",
-      "title": "Combine Files (Detect)"
+      "title": "FC - Combine Files (Detect)"
     },
     {
       "category": "CMDR",
@@ -58,12 +58,12 @@
     {
       "category": "CMDR",
       "command": "cli-helper.preparePassword",
-      "title": "Prepare Passwords (Default 16)"
+      "title": "BS - Prepare Passwords (Default 16)"
     },
     {
       "category": "CMDR",
       "command": "cli-helper.preparePasswordCustom",
-      "title": "Prepare Passwords (Custom Length)"
+      "title": "BS - Prepare Passwords (Custom Length)"
     },
     {
       "category": "CMDR",
