@@ -62,7 +62,7 @@
     "typescript-eslint": "^8.56.1",
     "@vscode/vsce": "^3.9.2"
   },
-  "version": "0.3.323",
+  "version": "0.3.324",
   "contributes": {
     "commands": [
       {

@@ -249,21 +249,13 @@ cli-helper-0.3.322.vsix
 
 ## Przygotowanie i publikacja wydania
 
-Przed wydaniem ustal wersję wyłącznie w `metadata/project.json`, a następnie wykonaj:
-
-```powershell
-npm run prepare:metadata
-```
-
-Zatwierdź wszystkie zmiany i upewnij się, że working tree jest czysty. Wersja musi być zgodna we wszystkich manifestach i musi używać formatu `X.Y.Z`.
-
-Wydanie przygotowuje i wysyła komenda:
+Przed wydaniem ustal wersję wyłącznie w `metadata/project.json`. Wówczas uruchom:
 
 ```powershell
 make release
 ```
 
-Komenda sprawdza wersję, zgodność `package.json`, `metadata/project.json` i `package-lock.json`, czystość working tree oraz istnienie taga lokalnie i na `origin`. Następnie tworzy i wypycha anotowany tag `vX.Y.Z`, np. `v0.3.322`. Istniejących tagów nie nadpisuje i nie tworzy automatycznego commita zmian.
+Komenda najpierw wykonuje `npm run prepare:metadata`, dlatego ręczne uruchamianie generatora przed release nie jest niezbędne. Następnie synchronizowane `package.json` i `package-lock.json` muszą zostać zatwierdzonymi zmianami w Git, a working tree musi być czysty — skrypt nie wykonuje automatycznego commita. Komenda sprawdza również poprawny format wersji, zgodność manifestów, istnienie taga lokalnie i na `origin` oraz tworzy i wypycha anotowany tag `vX.Y.Z`.
 
 Wypchnięcie taga uruchamia `.github/workflows/release.yml`. GitHub Actions:
 
