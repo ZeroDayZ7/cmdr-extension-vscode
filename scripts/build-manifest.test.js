@@ -18,12 +18,13 @@ function writeJson(directory, name, value) {
   return filePath;
 }
 
-test("every contributed command has explicit activation and a source registration", () => {
+test("every contributed command has a source registration", () => {
   const scriptsDirectory = path.dirname(fileURLToPath(import.meta.url));
   const rootDirectory = path.join(scriptsDirectory, "..");
   const packageJson = JSON.parse(fs.readFileSync(path.join(rootDirectory, "package.json"), "utf8"));
   const contributedIds = packageJson.contributes.commands.map((entry) => entry.command);
-  const activationEvents = new Set(packageJson.activationEvents);
+
+  assert.equal(packageJson.activationEvents, undefined, "activationEvents must not contain redundant onCommand declarations");
 
   const constantsSource = fs.readFileSync(path.join(rootDirectory, "src/constants/commands.ts"), "utf8");
   const commandSources = [
@@ -37,7 +38,6 @@ test("every contributed command has explicit activation and a source registratio
   ].map((relativePath) => fs.readFileSync(path.join(rootDirectory, relativePath), "utf8")).join("\n");
 
   for (const commandId of contributedIds) {
-    assert.ok(activationEvents.has(`onCommand:${commandId}`), `missing activation event for ${commandId}`);
     const constantMatch = constantsSource.match(new RegExp("\\b([A-Z0-9_]+):\\s*\\\"" + commandId.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&") + "\\\""));
     assert.ok(constantMatch, `missing command constant for ${commandId}`);
     assert.ok(commandSources.includes(constantMatch[1]), `missing source registration handler for ${commandId} (${constantMatch[1]})`);
@@ -279,4 +279,68 @@ test("buildManifest rejects invalid JSON", () => {
     }),
     /invalid JSON/i,
   );
+});
+
+test("all contributed commands use the CMDR category with clean titles", () => {
+  const scriptsDirectory = path.dirname(fileURLToPath(import.meta.url));
+  const rootDirectory = path.join(scriptsDirectory, "..");
+  const metadata = JSON.parse(fs.readFileSync(path.join(rootDirectory, "metadata/menus.json"), "utf8"));
+  const packageJson = JSON.parse(fs.readFileSync(path.join(rootDirectory, "package.json"), "utf8"));
+
+  const expectedCommandIds = [
+    "cli-helper.annotate",
+    "cli-helper.annotateVerbose",
+    "cli-helper.annotateDryRun",
+    "cli-helper.codeRegions",
+    "cli-helper.rmvComments",
+    "cli-helper.treeClipboard",
+    "cli-helper.fcDart",
+    "cli-helper.treeAscii",
+    "cli-helper.treeJson",
+    "cli-helper.treeCsv",
+    "cli-helper.treeMd",
+    "cli-helper.preparePassword",
+    "cli-helper.preparePasswordCustom",
+    "cli-helper.cliStatus",
+    "cli-helper.cliUpdateCheck",
+    "cli-helper.cliInstall",
+    "cli-helper.cliUpdate",
+    "cli-helper.cliConfigure",
+    "cli-helper.cliSettings",
+  ];
+
+  assert.deepEqual(
+    metadata.commands.map((entry) => entry.command).sort(),
+    expectedCommandIds.slice().sort(),
+  );
+
+  for (const sourceEntry of metadata.commands) {
+    assert.equal(sourceEntry.category, "CMDR", `missing CMDR category for ${sourceEntry.command}`);
+    assert.doesNotMatch(sourceEntry.title, /^(ANT -|REG -|RMC -|Tree -|FC -|BS -)|CMDR:/,
+      `title redundantly prefixes category for ${sourceEntry.command}: ${sourceEntry.title}`);
+
+    const manifestEntry = packageJson.contributes.commands.find((entry) => entry.command === sourceEntry.command);
+    assert.ok(manifestEntry, `missing generated manifest entry for ${sourceEntry.command}`);
+    assert.equal(manifestEntry.title, sourceEntry.title);
+    assert.equal(manifestEntry.category, "CMDR");
+  }
+
+  assert.deepEqual(metadata.menus["explorer/context"], [
+    { submenu: "cli-helper.submenu", group: "7_modification" },
+  ]);
+  assert.ok(metadata.menus["cli-helper.submenu"].some((entry) => entry.command === "cli-helper.annotate"));
+  assert.ok(metadata.menus["cli-helper.submenu"].some((entry) => entry.command === "cli-helper.fcDart"));
+  assert.ok(!metadata.menus["cli-helper.submenu"].some((entry) => entry.command === "cli-helper.preparePassword"));
+  assert.ok(!metadata.menus["cli-helper.submenu"].some((entry) => entry.command === "cli-helper.preparePasswordCustom"));
+  assert.deepEqual(
+    metadata.menus["cli-helper.annotateOptions"].map((entry) => entry.command),
+    ["cli-helper.annotateVerbose", "cli-helper.annotateDryRun"],
+  );
+  assert.deepEqual(
+    metadata.menus["cli-helper.treeFormats"].map((entry) => entry.command),
+    ["cli-helper.treeAscii", "cli-helper.treeJson", "cli-helper.treeCsv", "cli-helper.treeMd"],
+  );
+  assert.equal(metadata.menus["cli-helper.bootstrapOptions"], undefined);
+  assert.ok(!metadata.submenus.some((entry) => entry.id === "cli-helper.bootstrapOptions"));
+  assert.ok(!JSON.stringify(metadata.menus).includes("cli-helper.bootstrapOptions"));
 });

@@ -19,27 +19,6 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:cli-helper.annotate",
-    "onCommand:cli-helper.annotateVerbose",
-    "onCommand:cli-helper.annotateDryRun",
-    "onCommand:cli-helper.codeRegions",
-    "onCommand:cli-helper.rmvComments",
-    "onCommand:cli-helper.treeClipboard",
-    "onCommand:cli-helper.fcDart",
-    "onCommand:cli-helper.treeAscii",
-    "onCommand:cli-helper.treeJson",
-    "onCommand:cli-helper.treeCsv",
-    "onCommand:cli-helper.treeMd",
-    "onCommand:cli-helper.preparePassword",
-    "onCommand:cli-helper.preparePasswordCustom",
-    "onCommand:cli-helper.cliStatus",
-    "onCommand:cli-helper.cliUpdateCheck",
-    "onCommand:cli-helper.cliInstall",
-    "onCommand:cli-helper.cliUpdate",
-    "onCommand:cli-helper.cliConfigure",
-    "onCommand:cli-helper.cliSettings"
-  ],
   "main": "./dist/extension.js",
   "scripts": {
     "gen-manifest": "node scripts/build-manifest.js",
@@ -82,91 +61,127 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1"
   },
-  "version": "0.3.322",
+  "version": "0.3.323",
   "contributes": {
     "commands": [
       {
+        "category": "CMDR",
         "command": "cli-helper.annotate",
-        "title": "ANT - Annotate Project Path"
+        "title": "Annotate Project Path"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.annotateVerbose",
-        "title": "ANT - Annotate (Verbose Logging)"
+        "title": "Annotate (Verbose Logging)"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.annotateDryRun",
-        "title": "ANT - Annotate (Dry Run Preview)"
+        "title": "Annotate (Dry Run Preview)"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.codeRegions",
-        "title": "REG - Wrap into #regions"
+        "title": "Wrap into #regions"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.rmvComments",
-        "title": "RMC - Remove Comments"
+        "title": "Remove Comments"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.treeClipboard",
-        "title": "Tree - Copy Structure (Standard)"
+        "title": "Copy Structure (Standard)"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.fcDart",
-        "title": "FC - Combine Files (Detect)"
+        "title": "Combine Files (Detect)"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.treeAscii",
         "title": "Copy as ASCII"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.treeJson",
         "title": "Copy as JSON"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.treeCsv",
         "title": "Copy as CSV"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.treeMd",
         "title": "Copy as Markdown"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.preparePassword",
-        "title": "BS - Prepare Passwords (Default 16)"
+        "title": "Prepare Passwords (Default 16)"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.preparePasswordCustom",
-        "title": "BS - Prepare Passwords (Custom Length)"
+        "title": "Prepare Passwords (Custom Length)"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.cliStatus",
-        "title": "CMDR: CLI Status"
+        "title": "CLI Status"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.cliUpdateCheck",
-        "title": "CMDR: Check CLI Updates"
+        "title": "Check CLI Updates"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.cliInstall",
-        "title": "CMDR: Install Managed CLI"
+        "title": "Install Managed CLI"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.cliUpdate",
-        "title": "CMDR: Update Managed CLI"
+        "title": "Update Managed CLI"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.cliConfigure",
-        "title": "CMDR: Configure CLI Source"
+        "title": "Configure CLI Source"
       },
       {
+        "category": "CMDR",
         "command": "cli-helper.cliSettings",
-        "title": "CMDR: CLI Settings"
+        "title": "CLI Settings"
       }
     ],
     "configuration": {
-      "title": "CMDR",
       "properties": {
+        "cmdr.cli.autoUpdate": {
+          "default": false,
+          "description": "Automatically install managed CMDR updates when available.",
+          "type": "boolean"
+        },
+        "cmdr.cli.customPath": {
+          "default": "",
+          "description": "Full path to a custom CMDR executable.",
+          "type": "string"
+        },
+        "cmdr.cli.githubRepository": {
+          "default": "ZeroDayZ7/cmdr",
+          "description": "GitHub owner and repository used for stable CMDR releases.",
+          "pattern": "^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$",
+          "patternErrorMessage": "Use the owner/repository format, for example ZeroDayZ7/cmdr.",
+          "type": "string"
+        },
         "cmdr.cli.source": {
-          "type": "string",
+          "default": "path",
+          "description": "Selects how the CMDR executable is resolved.",
           "enum": [
             "path",
             "custom",
@@ -177,56 +192,25 @@
             "Use a custom executable path.",
             "Use the CLI installation managed by this extension."
           ],
-          "default": "path",
-          "description": "Selects how the CMDR executable is resolved."
-        },
-        "cmdr.cli.customPath": {
-          "type": "string",
-          "default": "",
-          "description": "Full path to a custom CMDR executable."
-        },
-        "cmdr.cli.autoUpdate": {
-          "type": "boolean",
-          "default": false,
-          "description": "Automatically install managed CMDR updates when available."
+          "type": "string"
         },
         "cmdr.cli.versionCheck": {
-          "type": "boolean",
           "default": true,
-          "description": "Check managed CMDR versions periodically."
-        },
-        "cmdr.cli.githubRepository": {
-          "type": "string",
-          "default": "ZeroDayZ7/cmdr",
-          "pattern": "^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$",
-          "patternErrorMessage": "Use the owner/repository format, for example ZeroDayZ7/cmdr.",
-          "description": "GitHub owner and repository used for stable CMDR releases."
+          "description": "Check managed CMDR versions periodically.",
+          "type": "boolean"
         }
-      }
+      },
+      "title": "CMDR"
     },
-    "submenus": [
-      {
-        "id": "cli-helper.submenu",
-        "label": "CMDR Tools"
-      },
-      {
-        "id": "cli-helper.annotateOptions",
-        "label": "ANT - Options & Preview"
-      },
-      {
-        "id": "cli-helper.treeFormats",
-        "label": "Tree - Special Formats"
-      },
-      {
-        "id": "cli-helper.bootstrapOptions",
-        "label": "BS - Prepare Password"
-      }
-    ],
     "menus": {
-      "explorer/context": [
+      "cli-helper.annotateOptions": [
         {
-          "submenu": "cli-helper.submenu",
-          "group": "7_modification"
+          "command": "cli-helper.annotateVerbose",
+          "group": "options@1"
+        },
+        {
+          "command": "cli-helper.annotateDryRun",
+          "group": "options@2"
         }
       ],
       "cli-helper.submenu": [
@@ -235,8 +219,8 @@
           "group": "1_annotate@1"
         },
         {
-          "submenu": "cli-helper.annotateOptions",
-          "group": "1_annotate@2"
+          "group": "1_annotate@2",
+          "submenu": "cli-helper.annotateOptions"
         },
         {
           "command": "cli-helper.codeRegions",
@@ -255,32 +239,8 @@
           "group": "2_utils@2"
         },
         {
-          "submenu": "cli-helper.bootstrapOptions",
-          "group": "2_utils@3"
-        },
-        {
-          "submenu": "cli-helper.treeFormats",
-          "group": "3_tree_formats"
-        }
-      ],
-      "cli-helper.bootstrapOptions": [
-        {
-          "command": "cli-helper.preparePassword",
-          "group": "options@1"
-        },
-        {
-          "command": "cli-helper.preparePasswordCustom",
-          "group": "options@2"
-        }
-      ],
-      "cli-helper.annotateOptions": [
-        {
-          "command": "cli-helper.annotateVerbose",
-          "group": "options@1"
-        },
-        {
-          "command": "cli-helper.annotateDryRun",
-          "group": "options@2"
+          "group": "3_tree_formats",
+          "submenu": "cli-helper.treeFormats"
         }
       ],
       "cli-helper.treeFormats": [
@@ -300,7 +260,27 @@
           "command": "cli-helper.treeMd",
           "group": "1_formats@4"
         }
+      ],
+      "explorer/context": [
+        {
+          "group": "7_modification",
+          "submenu": "cli-helper.submenu"
+        }
       ]
-    }
+    },
+    "submenus": [
+      {
+        "id": "cli-helper.submenu",
+        "label": "CMDR Tools"
+      },
+      {
+        "id": "cli-helper.annotateOptions",
+        "label": "ANT - Options & Preview"
+      },
+      {
+        "id": "cli-helper.treeFormats",
+        "label": "Tree - Special Formats"
+      }
+    ]
   }
 }

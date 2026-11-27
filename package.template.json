@@ -15,27 +15,6 @@
     "vscode": "^1.116.0"
   },
   "categories": ["Other"],
-  "activationEvents": [
-    "onCommand:cli-helper.annotate",
-    "onCommand:cli-helper.annotateVerbose",
-    "onCommand:cli-helper.annotateDryRun",
-    "onCommand:cli-helper.codeRegions",
-    "onCommand:cli-helper.rmvComments",
-    "onCommand:cli-helper.treeClipboard",
-    "onCommand:cli-helper.fcDart",
-    "onCommand:cli-helper.treeAscii",
-    "onCommand:cli-helper.treeJson",
-    "onCommand:cli-helper.treeCsv",
-    "onCommand:cli-helper.treeMd",
-    "onCommand:cli-helper.preparePassword",
-    "onCommand:cli-helper.preparePasswordCustom",
-    "onCommand:cli-helper.cliStatus",
-    "onCommand:cli-helper.cliUpdateCheck",
-    "onCommand:cli-helper.cliInstall",
-    "onCommand:cli-helper.cliUpdate",
-    "onCommand:cli-helper.cliConfigure",
-    "onCommand:cli-helper.cliSettings"
-  ],
   "main": "./dist/extension.js",
   "scripts": {
     "gen-manifest": "node scripts/build-manifest.js",
