@@ -233,6 +233,53 @@ Nazwa pliku VSIX jest tworzona na podstawie wygenerowanego manifestu, np.:
 cli-helper-0.3.322.vsix
 ```
 
+## Lokalny build
+
+Dostępny skrót Make buduje produkcyjny pakiet tym samym pipeline'em co bezpośredni skrypt npm:
+
+```powershell
+make build
+```
+
+Komenda wykonuje `npm run build:full`, czyli produkcyjny build, synchronizację metadanych i pakowanie VSIX. Plik jest zapisany w katalogu głównym projektu, np.:
+
+```text
+cli-helper-0.3.322.vsix
+```
+
+## Przygotowanie i publikacja wydania
+
+Przed wydaniem ustal wersję wyłącznie w `metadata/project.json`, a następnie wykonaj:
+
+```powershell
+npm run prepare:metadata
+```
+
+Zatwierdź wszystkie zmiany i upewnij się, że working tree jest czysty. Wersja musi być zgodna we wszystkich manifestach i musi używać formatu `X.Y.Z`.
+
+Wydanie przygotowuje i wysyła komenda:
+
+```powershell
+make release
+```
+
+Komenda sprawdza wersję, zgodność `package.json`, `metadata/project.json` i `package-lock.json`, czystość working tree oraz istnienie taga lokalnie i na `origin`. Następnie tworzy i wypycha anotowany tag `vX.Y.Z`, np. `v0.3.322`. Istniejących tagów nie nadpisuje i nie tworzy automatycznego commita zmian.
+
+Wypchnięcie taga uruchamia `.github/workflows/release.yml`. GitHub Actions:
+
+1. pobiera repozytorium i instaluje Node.js 22,
+2. wykonuje `npm ci`,
+3. weryfikuje zgodność taga z wersjami w manifestach,
+4. uruchamia testy, kontrolę typów, lint i walidację metadanych,
+5. wykonuje `npm run build:full` i generuje VSIX,
+6. tworzy GitHub Release powiązany z tagiem i załącza plik VSIX.
+
+Workflow nie publikuje rozszerzenia na VS Code Marketplace. Gotowy pakiet pobierzesz z strony GitHub Releases repozytorium:
+
+```text
+https://github.com/ZeroDayZ7/cli-helper-cmdr-extension-vscode/releases
+```
+
 ## 6. Pakowanie lokalnego VSIX
 
 Pakowanie jedną komendą:

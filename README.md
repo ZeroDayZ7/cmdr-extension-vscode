@@ -64,15 +64,15 @@ The settings view lets you select the CLI source and configure managed update be
 
 For PATH or custom installations, install and update CMDR independently through the corresponding CMDR CLI distribution mechanism.
 
-## Development
+## Development and releases
 
-```powershell
-npm ci
-npm run gen-manifest
-npm run test:manifest
-npm test
-npm run compile
-```
+Do lokalnego budowania, przygotowania nowej wersji i publikacji GitHub Release służy proces opisany w [dokumentacji build i release](docs/release-local.md).
+
+Krótko:
+
+- `make build` tworzy lokalny pakiet VSIX.
+- `make release` tworzy i wypycha tag `vX.Y.Z` po wcześniejszym zatwierdzeniu zmian i czystym working tree.
+- GitHub Actions buduje VSIX i dołącza go do GitHub Release; pakiet pobierzesz ze [strony Releases](https://github.com/ZeroDayZ7/cli-helper-cmdr-extension-vscode/releases).
 
 ## Links
 

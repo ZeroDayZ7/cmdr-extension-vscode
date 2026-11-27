@@ -68,32 +68,32 @@
     {
       "category": "CMDR",
       "command": "cli-helper.cliStatus",
-      "title": "CLI Status"
+      "title": "CMDR: CLI Status"
     },
     {
       "category": "CMDR",
       "command": "cli-helper.cliUpdateCheck",
-      "title": "Check CLI Updates"
+      "title": "CMDR: Check CLI Updates"
     },
     {
       "category": "CMDR",
       "command": "cli-helper.cliInstall",
-      "title": "Install Managed CLI"
+      "title": "CMDR: Install Managed CLI"
     },
     {
       "category": "CMDR",
       "command": "cli-helper.cliUpdate",
-      "title": "Update Managed CLI"
+      "title": "CMDR: Update Managed CLI"
     },
     {
       "category": "CMDR",
       "command": "cli-helper.cliConfigure",
-      "title": "Configure CLI Source"
+      "title": "CMDR: Configure CLI Source"
     },
     {
       "category": "CMDR",
       "command": "cli-helper.cliSettings",
-      "title": "CLI Settings"
+      "title": "CMDR: CLI Settings"
     }
   ],
   "configuration": {

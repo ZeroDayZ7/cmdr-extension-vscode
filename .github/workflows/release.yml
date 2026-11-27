@@ -1,0 +1,119 @@
+name: Release VSIX
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Test and publish GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify tag and package versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag '$TAG' must use the vX.Y.Z format."
+            exit 1
+          fi
+
+          node <<'NODE'
+          const fs = require('node:fs');
+          const tag = process.env.GITHUB_REF_NAME;
+          const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const projectJson = JSON.parse(fs.readFileSync('metadata/project.json', 'utf8'));
+          const lockJson = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+          const expected = tag.slice(1);
+
+          if (packageJson.version !== expected) {
+            throw new Error(`Tag version ${expected} does not match package.json version ${packageJson.version}.`);
+          }
+          if (projectJson.version !== expected) {
+            throw new Error(`Tag version ${expected} does not match metadata/project.json version ${projectJson.version}.`);
+          }
+          if (lockJson.version !== expected || lockJson.packages?.['']?.version !== expected) {
+            throw new Error(`Tag version ${expected} does not match package-lock.json.`);
+          }
+          console.log(`Verified release version: ${expected}`);
+          NODE
+
+      - name: Run quality checks
+        run: |
+          npm run test:manifest
+          npm run check-types
+          npm run lint
+          npm run validate:metadata
+
+      - name: Run extension tests
+        run: npm test
+
+      - name: Build VSIX
+        run: npm run build:full
+
+      - name: Locate VSIX asset
+        id: vsix
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t VSIX_FILES < <(find . -maxdepth 1 -type f -name 'cli-helper-*.vsix' -print)
+          if [[ ${#VSIX_FILES[@]} -ne 1 ]]; then
+            echo "::error::Expected exactly one cli-helper-*.vsix file; found ${#VSIX_FILES[@]}."
+            exit 1
+          fi
+          echo "path=${VSIX_FILES[0]}" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "${VSIX_FILES[0]}")" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          node <<'NODE' > RELEASE_NOTES.md
+          const fs = require('node:fs');
+          const changelog = fs.readFileSync('CHANGELOG.md', 'utf8');
+          const version = process.env.GITHUB_REF_NAME.slice(1);
+          const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const exact = changelog.match(new RegExp(`^##\\s+\\[${escaped}\\][\\s\\S]*?(?=^##\\s+\\[|$(?![\\s\\S]))`, 'm'));
+          const unreleased = changelog.match(/^## \[Unreleased\][\s\S]*?(?=^##\s+\[|$(?![\s\S]))/m);
+          const selected = exact?.[0] || unreleased?.[0];
+          if (selected) {
+            process.stdout.write(selected.trim() + '\n');
+          } else {
+            process.stdout.write(`Release ${process.env.GITHUB_REF_NAME}\n`);
+          }
+          NODE
+
+      - name: Create GitHub Release and upload VSIX
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          VSIX="${{ steps.vsix.outputs.path }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::GitHub Release '$TAG' already exists."
+            exit 1
+          fi
+          gh release create "$TAG" "$VSIX" --title "CMDR Tools $TAG" --notes-file RELEASE_NOTES.md

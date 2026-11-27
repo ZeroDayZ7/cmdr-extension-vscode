@@ -324,8 +324,29 @@ test("all contributed commands use the CMDR category with clean titles", () => {
 
   for (const sourceEntry of metadata.commands) {
     assert.equal(sourceEntry.category, "CMDR", `missing CMDR category for ${sourceEntry.command}`);
-    assert.doesNotMatch(sourceEntry.title, /^(ANT -|REG -|RMC -|Tree -|FC -|BS -)|CMDR:/,
-      `title redundantly prefixes category for ${sourceEntry.command}: ${sourceEntry.title}`);
+
+    const originalPrefixes = /^(ANT -|REG -|RMC -|Tree -|FC -|BS -)/;
+    const cliPrefixes = /^CMDR:/;
+    const isPrefixedCommand = sourceEntry.command.startsWith("cli-helper.annotate")
+      || sourceEntry.command === "cli-helper.codeRegions"
+      || sourceEntry.command === "cli-helper.rmvComments"
+      || sourceEntry.command === "cli-helper.treeClipboard"
+      || sourceEntry.command === "cli-helper.fcDart"
+      || sourceEntry.command.startsWith("cli-helper.preparePassword")
+      || sourceEntry.command.startsWith("cli-helper.cli");
+
+    if (isPrefixedCommand) {
+      if (sourceEntry.command.startsWith("cli-helper.cli")) {
+        assert.match(sourceEntry.title, cliPrefixes,
+          `missing original CMDR prefix for ${sourceEntry.command}: ${sourceEntry.title}`);
+      } else {
+        assert.match(sourceEntry.title, originalPrefixes,
+          `missing original title prefix for ${sourceEntry.command}: ${sourceEntry.title}`);
+      }
+    } else {
+      assert.doesNotMatch(sourceEntry.title, originalPrefixes,
+        `unexpected title prefix for ${sourceEntry.command}: ${sourceEntry.title}`);
+    }
 
     const manifestEntry = packageJson.contributes.commands.find((entry) => entry.command === sourceEntry.command);
     assert.ok(manifestEntry, `missing generated manifest entry for ${sourceEntry.command}`);
