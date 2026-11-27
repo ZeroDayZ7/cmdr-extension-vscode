@@ -39,8 +39,9 @@ try {
   }
 
   console.log(`Synchronizing generated metadata for ${version}...`);
-  execFileSync(process.platform === "win32" ? "npm.cmd" : "npm", ["run", "prepare:metadata"], {
+  execFileSync("npm", ["run", "prepare:metadata"], {
     stdio: "inherit",
+    shell: process.platform === "win32",
   });
 
   const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
