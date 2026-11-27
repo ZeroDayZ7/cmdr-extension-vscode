@@ -121,5 +121,5 @@ export async function configureCliSourceForApi(
   autoUpdate?: boolean,
   versionCheck?: boolean,
 ) {
-  await updateCliConfiguration(source, customPath, undefined, autoUpdate, versionCheck);
+  await updateCliConfiguration(source, customPath, autoUpdate, versionCheck);
 }

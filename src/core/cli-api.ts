@@ -23,7 +23,6 @@ export class CliApi {
     await updateCliConfiguration(
       configuration.source ?? current.source,
       configuration.customPath ?? current.customPath,
-      configuration.githubRepository ?? current.githubRepository,
       configuration.autoUpdate ?? current.autoUpdate,
       configuration.versionCheck ?? current.versionCheck,
     );

@@ -54,9 +54,16 @@ test("CLI settings webview has panel, message, status, and disposal handlers", (
     "private async sendStatus",
     "private api(): CliApi",
     "private getHtml(): string",
+    "status-layout",
+    "custom-field",
+    "version-actions",
+    "check-row",
   ]) {
     assert.ok(panelSource.includes(requiredFragment), `CLI settings panel missing ${requiredFragment}`);
   }
+  assert.ok(!panelSource.includes("GitHub Repository"));
+  assert.ok(!panelSource.includes("githubRepository"));
+  assert.ok(!panelSource.includes("saveRepository"));
 });
 
 test("validates CLI configuration metadata", () => {
@@ -69,6 +76,7 @@ test("validates CLI configuration metadata", () => {
   assert.equal(metadata.configuration.properties["cmdr.cli.autoUpdate"].type, "boolean");
   assert.equal(metadata.configuration.properties["cmdr.cli.versionCheck"].type, "boolean");
   assert.ok(metadata.commands.some((entry) => entry.command === "cli-helper.cliConfigure"));
+  assert.equal(metadata.configuration.properties["cmdr.cli.githubRepository"], undefined);
 });
 
 test("validates central project metadata", () => {

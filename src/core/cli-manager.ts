@@ -15,6 +15,7 @@ import {
 import type { CliOperationResult, CliStatus, CliUpdateStatus } from "./cli-types.js";
 
 const RELEASES_API_BASE = "https://api.github.com/repos";
+const CMDR_REPOSITORY = "ZeroDayZ7/cmdr";
 const MAX_RELEASE_BYTES = 4 << 20;
 const MAX_ARCHIVE_BYTES = 128 << 20;
 const DOWNLOAD_TIMEOUT_MS = 60_000;
@@ -145,12 +146,7 @@ export class CliManager {
   }
 
   private async fetchRelease(): Promise<Release> {
-    const repository = getCliConfiguration().githubRepository.trim();
-    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) {
-      throw new Error("GitHub repository must use the owner/repository format.");
-    }
-
-    const releasesUrl = `${RELEASES_API_BASE}/${repository}/releases/latest`;
+    const releasesUrl = `${RELEASES_API_BASE}/${CMDR_REPOSITORY}/releases/latest`;
     const response = await this.fetchImpl(releasesUrl, {
       headers: { Accept: "application/vnd.github+json", "User-Agent": "cmdr-vscode-extension" },
     });

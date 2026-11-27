@@ -1,8 +1,6 @@
 import * as vscode from "vscode";
 import * as crypto from "node:crypto";
-import { CliManager } from "../core/cli-manager.js";
 import { CliApi } from "../core/cli-api.js";
-import { validateGithubRepository } from "../core/cli-config.js";
 
 const panelType = "cmdr.cliSettings";
 
@@ -95,26 +93,15 @@ export class CliSettingsPanel implements vscode.WebviewPanelSerializer {
           if (message.customPath !== undefined && typeof message.customPath !== "string") {
             throw new Error("Invalid custom executable path.");
           }
-          if (message.githubRepository !== undefined && typeof message.githubRepository !== "string") {
-            throw new Error("Invalid GitHub repository.");
-          }
           if (message.autoUpdate !== undefined && typeof message.autoUpdate !== "boolean") {
             throw new Error("Invalid automatic update setting.");
           }
           if (message.versionCheck !== undefined && typeof message.versionCheck !== "boolean") {
             throw new Error("Invalid version check setting.");
           }
-          if (typeof message.githubRepository === "string") {
-            const repositoryError = validateGithubRepository(message.githubRepository);
-            if (repositoryError) {
-              await this.post({ type: "operationResult", success: false, message: repositoryError });
-              return;
-            }
-          }
           await this.api().updateConfiguration({
             source: message.source,
             customPath: message.customPath,
-            githubRepository: message.githubRepository,
             autoUpdate: message.autoUpdate,
             versionCheck: message.versionCheck,
           });
@@ -182,42 +169,187 @@ export class CliSettingsPanel implements vscode.WebviewPanelSerializer {
 <title>CMDR CLI Settings</title>
 <style nonce="${nonce}">
 :root { color-scheme: light dark; }
-body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); background: var(--vscode-editor-background); padding: 20px; }
-h1,h2 { font-weight: 600; } h1 { font-size: 24px; } h2 { font-size: 16px; margin-top: 24px; }
-.card { border: 1px solid var(--vscode-panel-border); border-radius: 6px; padding: 14px; margin: 10px 0; background: var(--vscode-editorWidget-background); }
-.row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; } label { display:block; margin:8px 0 4px; }
-input, select { box-sizing:border-box; background:var(--vscode-input-background); color:var(--vscode-input-foreground); border:1px solid var(--vscode-input-border); padding:7px; min-width:260px; }
-button { background:var(--vscode-button-background); color:var(--vscode-button-foreground); border:none; padding:8px 12px; cursor:pointer; } button.secondary { background:var(--vscode-button-secondaryBackground); color:var(--vscode-button-secondaryForeground); } button:disabled { opacity:.55; cursor:not-allowed; }
-#result { min-height:20px; white-space:pre-wrap; } .success { color:var(--vscode-testing-iconPassed); } .error { color:var(--vscode-errorForeground); }
+* { box-sizing: border-box; }
+body {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+  font-family: var(--vscode-font-family);
+}
+.page-header { margin-bottom: 18px; }
+.page-header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+.card {
+  margin: 12px 0;
+  padding: 16px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  background: var(--vscode-editorWidget-background);
+}
+.card h2 { margin: 0 0 14px; font-size: 15px; font-weight: 600; }
+.status-layout { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: start; }
+.status-details { min-width: 0; }
+.status-value { font-weight: 600; margin-bottom: 8px; }
+.status-meta { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; color: var(--vscode-descriptionForeground); }
+.status-meta dt { font-weight: 500; }
+.status-meta dd { margin: 0; overflow-wrap: anywhere; }
+.field { margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+.field-label { display: block; margin-bottom: 6px; color: var(--vscode-foreground); font-weight: 500; }
+.field-help { margin-top: 6px; color: var(--vscode-descriptionForeground); font-size: 12px; }
+input, select {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+}
+input:focus, select:focus, button:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}
+.input-action { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.custom-field[aria-disabled="true"] { opacity: .55; }
+.custom-field[aria-disabled="true"] input, .custom-field[aria-disabled="true"] button { cursor: not-allowed; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.actions.end { justify-content: flex-end; }
+button {
+  min-height: 32px;
+  border: 0;
+  border-radius: 4px;
+  padding: 6px 12px;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  cursor: pointer;
+}
+button.secondary { color: var(--vscode-button-secondaryForeground); background: var(--vscode-button-secondaryBackground); }
+button:disabled { opacity: .55; cursor: wait; }
+.version-actions { display: grid; grid-template-columns: repeat(2, minmax(180px, 220px)); gap: 8px; }
+.version-actions button { width: 100%; }
+.check-row { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; }
+.check-row input { width: 16px; min-height: 16px; height: 16px; margin: 2px 0 0; flex: 0 0 auto; }
+.check-row label { line-height: 20px; cursor: pointer; }
+.check-copy { display: grid; gap: 2px; }
+.check-copy small { color: var(--vscode-descriptionForeground); }
+.general-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
+#result { min-height: 20px; margin-top: 12px; white-space: pre-wrap; }
+.success { color: var(--vscode-testing-iconPassed); }
+.error { color: var(--vscode-errorForeground); }
+@media (max-width: 560px) {
+  body { padding: 16px; }
+  .status-layout { grid-template-columns: 1fr; }
+  .status-layout .actions { justify-content: flex-start; }
+  .input-action { grid-template-columns: 1fr; }
+  .input-action button { width: 100%; }
+  .version-actions { grid-template-columns: 1fr; }
+  .general-actions { justify-content: stretch; }
+  .general-actions button { width: 100%; }
+}
 </style>
 </head>
 <body>
-<h1>CMDR CLI Settings</h1>
-<div class="card"><h2>CLI Status</h2><div id="status">Loading...</div><div class="row" style="margin-top:10px"><button id="refresh">Refresh Status</button></div></div>
-<div class="card"><h2>CLI Source</h2>
-<label for="source">Source</label><select id="source"><option value="path">System PATH</option><option value="custom">Custom Executable</option><option value="managed">Managed Installation</option></select>
-<label for="customPath">Custom executable path</label><div class="row"><input id="customPath" placeholder="C:\\tools\\cmdr\\cmdr.exe"><button class="secondary" id="browse">Browse</button></div>
-</div>
-<div class="card"><h2>GitHub Repository</h2><label for="githubRepository">owner/repository</label><input id="githubRepository" value="ZeroDayZ7/cmdr"><div class="row" style="margin-top:10px"><button class="secondary" id="saveRepository">Save Repository</button></div></div>
-<div class="card"><h2>Version Management</h2><div class="row"><button class="secondary" id="checkVersion">Check CLI Version</button><button class="secondary" id="checkUpdate">Check for Updates</button><button id="install">Install CMDR</button><button id="update">Update CMDR</button></div></div>
-<div class="card"><h2>General Settings</h2><label><input type="checkbox" id="autoUpdate"> Automatic updates</label><label><input type="checkbox" id="versionCheck"> Periodic version checks</label><div class="row" style="margin-top:10px"><button id="save">Save Settings</button></div></div>
-<div id="result"></div>
+<header class="page-header"><h1>CMDR CLI Settings</h1></header>
+
+<section class="card" aria-labelledby="status-heading">
+  <h2 id="status-heading">CLI Status</h2>
+  <div class="status-layout">
+    <div class="status-details">
+      <div id="status-value" class="status-value">Loading...</div>
+      <dl class="status-meta">
+        <dt>Version</dt><dd id="status-version">—</dd>
+        <dt>Executable</dt><dd id="status-location">—</dd>
+      </dl>
+    </div>
+    <div class="actions"><button class="secondary" id="refresh" type="button">Refresh Status</button></div>
+  </div>
+</section>
+
+<section class="card" aria-labelledby="source-heading">
+  <h2 id="source-heading">CLI Source</h2>
+  <div class="field">
+    <label class="field-label" for="source">Source</label>
+    <select id="source"><option value="path">System PATH</option><option value="custom">Custom Executable</option><option value="managed">Managed Installation</option></select>
+  </div>
+  <div class="field custom-field" id="custom-field" aria-disabled="true">
+    <label class="field-label" for="customPath">Custom executable path</label>
+    <div class="input-action"><input id="customPath" type="text" spellcheck="false" placeholder="C:\\tools\\cmdr\\cmdr.exe"><button class="secondary" id="browse" type="button">Browse</button></div>
+  </div>
+</section>
+
+<section class="card" aria-labelledby="version-heading">
+  <h2 id="version-heading">Version Management</h2>
+  <div class="version-actions">
+    <button class="secondary" id="checkVersion" type="button">Check CLI Version</button>
+    <button class="secondary" id="checkUpdate" type="button">Check for Updates</button>
+    <button id="install" type="button">Install CMDR</button>
+    <button id="update" type="button">Update CMDR</button>
+  </div>
+</section>
+
+<section class="card" aria-labelledby="general-heading">
+  <h2 id="general-heading">General Settings</h2>
+  <div class="check-row"><input type="checkbox" id="autoUpdate"><label for="autoUpdate"><span class="check-copy">Automatic updates<small>Install managed CMDR updates automatically when available</small></span></label></div>
+  <div class="check-row"><input type="checkbox" id="versionCheck"><label for="versionCheck"><span class="check-copy">Periodic version checks<small>Check for managed CMDR updates periodically</small></span></label></div>
+  <div class="general-actions"><button id="save" type="button">Save Settings</button></div>
+</section>
+<div id="result" role="status" aria-live="polite"></div>
+
 <script nonce="${nonce}">
 const vscode = acquireVsCodeApi();
 const $ = (id) => document.getElementById(id);
 const send = (message) => vscode.postMessage(message);
-let operationRunning=false;
-function setRunning(running){operationRunning=running; ['checkVersion','checkUpdate','install','update','save','saveRepository'].forEach(id=>$(id).disabled=running);}
-$('refresh').addEventListener('click',()=>send({type:'refresh'}));
-$('browse').addEventListener('click',()=>send({type:'browse'}));
-$('checkVersion').addEventListener('click',()=>{setRunning(true);send({type:'checkVersion'});});
-$('checkUpdate').addEventListener('click',()=>{setRunning(true);send({type:'checkUpdate'});});
-$('install').addEventListener('click',()=>{setRunning(true);send({type:'install'});});
-$('update').addEventListener('click',()=>{setRunning(true);send({type:'update'});});
-$('save').addEventListener('click',()=>saveSettings());
-$('saveRepository').addEventListener('click',()=>saveSettings());
-function saveSettings(){const payload={type:'save',source:$('source').value,customPath:$('customPath').value,githubRepository:$('githubRepository').value,autoUpdate:$('autoUpdate').checked,versionCheck:$('versionCheck').checked};setRunning(true);send(payload);}
-window.addEventListener('message',event=>{const message=event.data;if(message.type==='status'){const s=message.status,c=message.configuration;$('status').textContent=s.available?(s.source+' | '+(s.version||'unknown version')+' | '+(s.location||'')):(s.message||'CMDR unavailable');$('source').value=c.source;$('customPath').value=c.customPath||'';$('githubRepository').value=c.githubRepository||'ZeroDayZ7/cmdr';$('autoUpdate').checked=!!c.autoUpdate;$('versionCheck').checked=!!c.versionCheck;}else if(message.type==='selectedPath'){$('customPath').value=message.path;}else if(message.type==='operationResult'){setRunning(false);$('result').className=message.success?'success':'error';$('result').textContent=message.message||'';}});
+let operationRunning = false;
+
+function setRunning(running) {
+  operationRunning = running;
+  ['refresh','checkVersion','checkUpdate','install','update','save','browse'].forEach((id) => { $(id).disabled = running; });
+}
+
+function updateCustomField() {
+  const enabled = $('source').value === 'custom';
+  $('custom-field').setAttribute('aria-disabled', String(!enabled));
+  $('customPath').disabled = !enabled;
+  $('browse').disabled = !enabled || operationRunning;
+}
+
+$('refresh').addEventListener('click', () => send({type:'refresh'}));
+$('browse').addEventListener('click', () => send({type:'browse'}));
+$('source').addEventListener('change', updateCustomField);
+$('checkVersion').addEventListener('click', () => { setRunning(true); send({type:'checkVersion'}); });
+$('checkUpdate').addEventListener('click', () => { setRunning(true); send({type:'checkUpdate'}); });
+$('install').addEventListener('click', () => { setRunning(true); send({type:'install'}); });
+$('update').addEventListener('click', () => { setRunning(true); send({type:'update'}); });
+$('save').addEventListener('click', () => {
+  setRunning(true);
+  send({type:'save', source:$('source').value, customPath:$('customPath').value, autoUpdate:$('autoUpdate').checked, versionCheck:$('versionCheck').checked});
+});
+
+window.addEventListener('message', (event) => {
+  const message = event.data;
+  if (message.type === 'status') {
+    const s = message.status;
+    const c = message.configuration;
+    $('status-value').textContent = s.available ? (s.source === 'managed' ? 'Managed installation' : s.source === 'custom' ? 'Custom executable' : 'System PATH') : 'Unavailable';
+    $('status-version').textContent = s.version || 'Unknown';
+    $('status-location').textContent = s.location || s.message || 'No executable configured';
+    $('source').value = c.source;
+    $('customPath').value = c.customPath || '';
+    $('autoUpdate').checked = !!c.autoUpdate;
+    $('versionCheck').checked = !!c.versionCheck;
+    updateCustomField();
+  } else if (message.type === 'selectedPath') {
+    $('customPath').value = message.path;
+  } else if (message.type === 'operationResult') {
+    setRunning(false);
+    $('result').className = message.success ? 'success' : 'error';
+    $('result').textContent = message.message || '';
+    updateCustomField();
+  }
+});
+updateCustomField();
 send({type:'status'});
 </script>
 </body>

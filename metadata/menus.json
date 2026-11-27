@@ -28,7 +28,7 @@
     {
       "category": "CMDR",
       "command": "cli-helper.treeClipboard",
-      "title": "Copy Structure (Standard)"
+      "title": "Tree Structure (Standard)"
     },
     {
       "category": "CMDR",
@@ -106,13 +106,6 @@
       "cmdr.cli.customPath": {
         "default": "",
         "description": "Full path to a custom CMDR executable.",
-        "type": "string"
-      },
-      "cmdr.cli.githubRepository": {
-        "default": "ZeroDayZ7/cmdr",
-        "description": "GitHub owner and repository used for stable CMDR releases.",
-        "pattern": "^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$",
-        "patternErrorMessage": "Use the owner/repository format, for example ZeroDayZ7/cmdr.",
         "type": "string"
       },
       "cmdr.cli.source": {
