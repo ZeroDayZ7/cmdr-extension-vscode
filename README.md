@@ -2,47 +2,32 @@
 
 CMDR Tools integrates the CMDR command-line toolkit into Visual Studio Code. It provides Explorer context-menu actions, Command Palette commands, CLI status and source management, managed installation/update controls, and a settings Webview.
 
+<p align="center">
+  <img src="assets/preview.jpg" alt="CMDR Tools Menu">
+</p>
+
 ## Features
 
 ### File and project operations
-
-- Annotate files or directories, with standard, verbose, and dry-run modes.
-- Add `#region` wrappers to code.
-- Remove comments from a selected file or directory.
-- Copy project tree structures as standard, ASCII, JSON, CSV, or Markdown output.
-- Combine files through the CMDR `fc` command.
-- Generate passwords for a JSON file with default or custom lengths.
+- **Annotate files or directories** with standard, verbose, and dry-run modes.
+- **Add `#region` wrappers** to code.
+- **Remove comments** from selected files or directories.
+- **Copy project tree structures** as standard, ASCII, JSON, CSV, or Markdown.
+- **Combine files** through the CMDR `fc` command.
+- **Generate passwords** for JSON files with default or custom lengths.
 
 ### CMDR CLI management
-
 - Check the resolved CLI status and executable version.
 - Check for stable CMDR CLI updates.
 - Select System PATH, a custom executable, or the managed CMDR installation.
-- Open the managed installation and update controls in a dedicated settings view.
+- Open managed installation and update controls in a dedicated settings view.
 - Configure automatic managed updates and periodic version checks.
 
 ## Access
 
 Commands are available from:
-
-- The Explorer context menu under **CMDR Tools**.
-- The Command Palette. Commands use the `CMDR:` category prefix.
-
-Password commands are available in the Command Palette even though they are not placed in the Explorer context menu.
-
-## Requirements
-
-- Visual Studio Code 1.116.0 or newer.
-- Node.js is only required for building or developing the extension from source.
-- A CMDR executable is required for commands that invoke the CLI.
-
-Supported CMDR installation sources:
-
-- System PATH.
-- A custom executable path selected in settings.
-- An extension-managed installation for supported Windows x64 and Linux x64 builds.
-
-CMDR Tools is implemented with Node.js process APIs and does not require PowerShell specifically.
+- The Explorer context menu under **CMDR Tools** (as shown above).
+- The Command Palette (using the `CMDR:` category prefix). *Password commands are available here even though they are not in the Explorer context menu.*
 
 ## Installation
 
@@ -66,13 +51,11 @@ For PATH or custom installations, install and update CMDR independently through 
 
 ## Development and releases
 
-Do lokalnego budowania, przygotowania nowej wersji i publikacji GitHub Release służy proces opisany w [dokumentacji build i release](docs/release-local.md).
+For local builds, preparing a new version, and publishing a GitHub Release, follow the workflow described in the [build and release documentation](docs/release-local.md).
 
-Krótko:
-
-- `make build` tworzy lokalny pakiet VSIX.
-- `make release` tworzy i wypycha tag `vX.Y.Z` po wcześniejszym zatwierdzeniu zmian i czystym working tree.
-- GitHub Actions buduje VSIX i dołącza go do GitHub Release; pakiet pobierzesz ze [strony Releases](https://github.com/ZeroDayZ7/cli-helper-cmdr-extension-vscode/releases).
+- `make build` builds a local VSIX package.
+- `make release` creates and pushes a `vX.Y.Z` tag after changes are committed and the working tree is clean.
+- GitHub Actions builds the VSIX and attaches it to the GitHub Release; you can download the package from the [Releases page](https://github.com/ZeroDayZ7/cli-helper-cmdr-extension-vscode/releases).
 
 ## Links
 
