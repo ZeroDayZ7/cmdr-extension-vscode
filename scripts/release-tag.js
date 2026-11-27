@@ -7,10 +7,12 @@ function fail(message) {
 }
 
 function git(args, options = {}) {
-  return execFileSync("git", args, {
+  const output = execFileSync("git", args, {
     encoding: "utf8",
     stdio: options.capture ? ["ignore", "pipe", "pipe"] : "inherit",
-  }).trim();
+  });
+
+  return options.capture ? (output ?? "").trim() : null;
 }
 
 try {
@@ -36,9 +38,6 @@ try {
 
   const tag = `v${version}`;
   const localTag = git(["tag", "--list", tag], { capture: true });
-  if (localTag) {
-    fail(`tag '${tag}' already exists locally.`);
-  }
 
   try {
     const remote = git(["ls-remote", "--exit-code", "--tags", "origin", `refs/tags/${tag}`], { capture: true });
@@ -51,18 +50,32 @@ try {
     }
   }
 
-  console.log(`Creating release tag ${tag} from the current commit...`);
-  git(["tag", "-a", tag, "-m", `Release ${tag}`]);
+  let createdTag = false;
+
+  if (localTag) {
+    const localCommit = git(["rev-list", "-n", "1", tag], { capture: true });
+    const headCommit = git(["rev-parse", "HEAD"], { capture: true });
+    if (localCommit !== headCommit) {
+      fail(`tag '${tag}' already exists locally and points to a different commit.`);
+    }
+    console.log(`Local tag ${tag} already exists for the current commit; retrying push...`);
+  } else {
+    console.log(`Creating release tag ${tag} from the current commit...`);
+    git(["tag", "-a", tag, "-m", `Release ${tag}`]);
+    createdTag = true;
+  }
 
   try {
     git(["push", "origin", tag]);
   } catch (error) {
-    try {
-      git(["tag", "-d", tag]);
-    } catch {
-      // Keep the original push error visible if local tag cleanup also fails.
+    if (createdTag) {
+      try {
+        git(["tag", "-d", tag]);
+      } catch {
+        // Keep the original push error visible if local tag cleanup also fails.
+      }
     }
-    fail(`could not push '${tag}' to origin. The local tag was removed when possible: ${error.message}`);
+    fail(`could not push '${tag}' to origin. ${createdTag ? "The locally created tag was removed when possible." : "The existing local tag was kept."} ${error.message}`);
   }
 
   console.log(`\nRelease tag '${tag}' pushed successfully. GitHub Actions will create the release.`);
