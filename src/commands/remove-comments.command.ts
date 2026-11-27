@@ -18,15 +18,11 @@ export function registerRemoveCommentsCommand(
         return;
       }
 
-      try {
-        const flag = await getCliTargetFlag(uri);
+      const flag = await getCliTargetFlag(uri);
 
-        await runCliCommand("cmdr", ["rmc", flag, uri.fsPath], {
-          successMessage: "CMDR: Comments removed successfully.",
-        });
-      } catch (error) {
-        throw error;
-      }
+      await runCliCommand("cmdr", ["rmc", flag, uri.fsPath], {
+        successMessage: "CMDR: Comments removed successfully.",
+      });
     },
   );
 

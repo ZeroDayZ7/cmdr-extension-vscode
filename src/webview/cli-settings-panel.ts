@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as crypto from "node:crypto";
 import { CliManager } from "../core/cli-manager.js";
 import { CliApi } from "../core/cli-api.js";
 import { validateGithubRepository } from "../core/cli-config.js";
@@ -7,6 +8,8 @@ const panelType = "cmdr.cliSettings";
 
 export class CliSettingsPanel implements vscode.WebviewPanelSerializer {
   private panel: vscode.WebviewPanel | undefined;
+  private panelSubscriptions: vscode.Disposable[] = [];
+  private operationRunning = false;
 
   constructor(private readonly context: vscode.ExtensionContext) {}
 
@@ -29,14 +32,7 @@ export class CliSettingsPanel implements vscode.WebviewPanelSerializer {
     );
 
     this.panel.webview.html = this.getHtml();
-    this.panel.webview.onDidReceiveMessage(
-      (message: unknown) => void this.receiveMessage(message),
-      undefined,
-      this.context.subscriptions,
-    );
-    this.panel.onDidDispose(() => {
-      this.panel = undefined;
-    }, undefined, this.context.subscriptions);
+    this.attachPanelLifecycle(this.panel);
 
     await this.sendStatus();
   }
@@ -44,6 +40,8 @@ export class CliSettingsPanel implements vscode.WebviewPanelSerializer {
   async deserializeWebviewPanel(panel: vscode.WebviewPanel): Promise<void> {
     this.panel = panel;
     panel.webview.html = this.getHtml();
+    this.attachPanelLifecycle(panel);
+    await this.sendStatus();
   }
 
   private api(): CliApi {
@@ -51,11 +49,26 @@ export class CliSettingsPanel implements vscode.WebviewPanelSerializer {
   }
 
   private async receiveMessage(value: unknown): Promise<void> {
-    if (!value || typeof value !== "object") {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      await this.post({ type: "operationResult", success: false, message: "Invalid settings command." });
       return;
     }
 
-    const message = value as { type?: string; source?: "path" | "custom" | "managed"; customPath?: string; githubRepository?: string; autoUpdate?: boolean; versionCheck?: boolean };
+    const message = value as Record<string, unknown>;
+    if (typeof message.type !== "string") {
+      await this.post({ type: "operationResult", success: false, message: "Invalid settings command." });
+      return;
+    }
+
+    if (this.operationRunning && message.type !== "status" && message.type !== "refresh") {
+      await this.post({ type: "operationResult", success: false, message: "Another CMDR operation is already running." });
+      return;
+    }
+
+    const mutatingTypes = new Set(["save", "browse", "checkVersion", "checkUpdate", "install", "update"]);
+    if (mutatingTypes.has(message.type)) {
+      this.operationRunning = true;
+    }
 
     try {
       switch (message.type) {
@@ -76,7 +89,22 @@ export class CliSettingsPanel implements vscode.WebviewPanelSerializer {
           break;
         }
         case "save": {
-          if (message.githubRepository) {
+          if (message.source !== undefined && message.source !== "path" && message.source !== "custom" && message.source !== "managed") {
+            throw new Error("Invalid CLI source.");
+          }
+          if (message.customPath !== undefined && typeof message.customPath !== "string") {
+            throw new Error("Invalid custom executable path.");
+          }
+          if (message.githubRepository !== undefined && typeof message.githubRepository !== "string") {
+            throw new Error("Invalid GitHub repository.");
+          }
+          if (message.autoUpdate !== undefined && typeof message.autoUpdate !== "boolean") {
+            throw new Error("Invalid automatic update setting.");
+          }
+          if (message.versionCheck !== undefined && typeof message.versionCheck !== "boolean") {
+            throw new Error("Invalid version check setting.");
+          }
+          if (typeof message.githubRepository === "string") {
             const repositoryError = validateGithubRepository(message.githubRepository);
             if (repositoryError) {
               await this.post({ type: "operationResult", success: false, message: repositoryError });
@@ -122,6 +150,10 @@ export class CliSettingsPanel implements vscode.WebviewPanelSerializer {
         success: false,
         message: error instanceof Error ? error.message : String(error),
       });
+    } finally {
+      if (mutatingTypes.has(message.type)) {
+        this.operationRunning = false;
+      }
     }
   }
 
@@ -140,7 +172,7 @@ export class CliSettingsPanel implements vscode.WebviewPanelSerializer {
   }
 
   private getHtml(): string {
-    const nonce = "cmdr" + Math.random().toString(36).slice(2);
+    const nonce = crypto.randomBytes(16).toString("base64").replace(/[^A-Za-z0-9]/g, "");
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -190,5 +222,26 @@ send({type:'status'});
 </script>
 </body>
 </html>`;
+  }
+
+  private attachPanelLifecycle(panel: vscode.WebviewPanel): void {
+    this.disposePanelSubscriptions();
+    this.panelSubscriptions = [
+      panel.webview.onDidReceiveMessage((message: unknown) => void this.receiveMessage(message)),
+      panel.onDidDispose(() => {
+        if (this.panel === panel) {
+          this.panel = undefined;
+        }
+        this.operationRunning = false;
+        this.disposePanelSubscriptions();
+      }),
+    ];
+  }
+
+  private disposePanelSubscriptions(): void {
+    for (const subscription of this.panelSubscriptions) {
+      subscription.dispose();
+    }
+    this.panelSubscriptions = [];
   }
 }

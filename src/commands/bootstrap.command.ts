@@ -17,41 +17,40 @@ async function executePreparePassword(
 
   if (askLength) {
     const input = await vscode.window.showInputBox({
-      prompt: "Enter generated password length",
+      prompt: "Enter generated password length (1-4096)",
       value: "16",
       validateInput: (value) => {
-        const parsed = parseInt(value, 10);
-        if (isNaN(parsed) || parsed <= 0) {
-          return "Please enter a valid positive number";
+        if (!/^\d+$/.test(value.trim())) {
+          return "Enter a whole number from 1 to 4096";
+        }
+        const parsed = Number(value);
+        if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > 4096) {
+          return "Enter a whole number from 1 to 4096";
         }
         return null;
       },
     });
 
-    if (!input) {
-      return; // Anulowano przez użytkownika
+    if (input === undefined) {
+      return;
     }
 
-    length = parseInt(input, 10);
+    length = Number(input);
   }
 
-  try {
-    const args = [
-      "bootstrap",
-      "prepare-password",
-      "-f",
-      targetUri.fsPath,
-      "-l",
-      length.toString(),
-    ];
+  const args = [
+    "bootstrap",
+    "prepare-password",
+    "-f",
+    targetUri.fsPath,
+    "-l",
+    length.toString(),
+  ];
 
-    await runCliCommand("cmdr", args, {
-      successMessage: `CMDR: Passwords successfully generated (length: ${length}).`,
-      errorMessage: "CMDR: Failed to prepare passwords.",
-    });
-  } catch (error) {
-    throw error;
-  }
+  await runCliCommand("cmdr", args, {
+    successMessage: `CMDR: Passwords successfully generated (length: ${length}).`,
+    errorMessage: "CMDR: Failed to prepare passwords.",
+  });
 }
 
 export function registerBootstrapCommands(context: vscode.ExtensionContext) {

@@ -10,7 +10,6 @@ import { runProcess } from "./cli-process.js";
 import {
   getCliVersion,
   managedCliDirectory,
-  managedCliPath,
   resolveCli,
 } from "./cli-resolver.js";
 import type { CliOperationResult, CliStatus, CliUpdateStatus } from "./cli-types.js";
@@ -18,6 +17,64 @@ import type { CliOperationResult, CliStatus, CliUpdateStatus } from "./cli-types
 const RELEASES_API_BASE = "https://api.github.com/repos";
 const MAX_RELEASE_BYTES = 4 << 20;
 const MAX_ARCHIVE_BYTES = 128 << 20;
+const DOWNLOAD_TIMEOUT_MS = 60_000;
+
+export interface SemanticVersion {
+  major: number;
+  minor: number;
+  patch: number;
+  prerelease: string[];
+}
+
+export function parseSemanticVersion(value: string): SemanticVersion | undefined {
+  const match = /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-ZaZ-]+)*))?(?:\+[0-9A-ZaZ-]+(?:\.[0-9A-ZaZ-]+)*)?$/.exec(value.trim());
+  if (!match) {
+    return undefined;
+  }
+  return { major: Number(match[1]), minor: Number(match[2]), patch: Number(match[3]), prerelease: match[4] ? match[4].split(".") : [] };
+}
+
+export function compareSemanticVersions(left: string, right: string): number {
+  const a = parseSemanticVersion(left);
+  const b = parseSemanticVersion(right);
+  if (!a || !b) {
+    throw new Error("Invalid semantic version");
+  }
+
+  for (const key of ["major", "minor", "patch"] as const) {
+    if (a[key] !== b[key]) {
+      return a[key] > b[key] ? 1 : -1;
+    }
+  }
+  if (!a.prerelease.length && b.prerelease.length) {
+    return 1;
+  }
+  if (a.prerelease.length && !b.prerelease.length) {
+    return -1;
+  }
+
+  for (let i = 0; i < Math.max(a.prerelease.length, b.prerelease.length); i++) {
+    if (a.prerelease[i] === b.prerelease[i]) {
+      continue;
+    }
+    if (a.prerelease[i] === undefined) {
+      return -1;
+    }
+    if (b.prerelease[i] === undefined) {
+      return 1;
+    }
+    const aNumeric = /^\d+$/.test(a.prerelease[i]);
+    const bNumeric = /^\d+$/.test(b.prerelease[i]);
+    if (aNumeric && bNumeric) {
+      return Number(a.prerelease[i]) > Number(b.prerelease[i]) ? 1 : -1;
+    }
+    if (aNumeric !== bNumeric) {
+      return aNumeric ? -1 : 1;
+    }
+    return a.prerelease[i] > b.prerelease[i] ? 1 : -1;
+  }
+  return 0;
+}
 
 interface ReleaseAsset {
   name: string;
@@ -53,18 +110,7 @@ export class CliManager {
   }
 
   private compareVersions(left: string, right: string): number {
-    const parse = (version: string) => version.replace(/^v/, "").split("-", 1)[0].split(".").map((part) => Number.parseInt(part, 10));
-    const leftParts = parse(left);
-    const rightParts = parse(right);
-
-    for (let index = 0; index < Math.max(leftParts.length, rightParts.length); index += 1) {
-      const difference = (leftParts[index] ?? 0) - (rightParts[index] ?? 0);
-      if (difference !== 0) {
-        return difference;
-      }
-    }
-
-    return 0;
+    return compareSemanticVersions(left, right);
   }
 
   async checkUpdate(): Promise<CliOperationResult> {
@@ -72,6 +118,12 @@ export class CliManager {
       const status = await this.getStatus();
       const release = await this.fetchRelease();
       const latestVersion = release.tag_name.replace(/^v/, "");
+      if (!parseSemanticVersion(latestVersion)) {
+        throw new Error(`Invalid CMDR release version: ${release.tag_name}`);
+      }
+      if (status.version && !parseSemanticVersion(status.version)) {
+        throw new Error(`Invalid installed CMDR version: ${status.version}`);
+      }
       const update: CliUpdateStatus = {
         installed: status.available,
         currentVersion: status.version,
@@ -177,19 +229,35 @@ export class CliManager {
         }
 
         try {
-          fs.copyFileSync(finalBinary, `${currentBinary}.new`);
-          fs.chmodSync(`${currentBinary}.new`, 0o755);
-          fs.renameSync(`${currentBinary}.new`, currentBinary);
+          const replacementPath = `${currentBinary}.new`;
+          fs.copyFileSync(finalBinary, replacementPath);
+          fs.chmodSync(replacementPath, 0o755);
+
+          if (process.platform === "win32" && fs.existsSync(currentBinary)) {
+            fs.rmSync(currentBinary, { force: true });
+          }
+          fs.renameSync(replacementPath, currentBinary);
+
+          const executableVersion = await getCliVersion(currentBinary);
+          if (!executableVersion || parseSemanticVersion(executableVersion) === undefined) {
+            throw new Error(`Installed CMDR reported an invalid version: ${executableVersion ?? "unknown"}`);
+          }
+          if (compareSemanticVersions(executableVersion, version) !== 0) {
+            throw new Error(`Installed CMDR reported ${executableVersion}, expected ${version}`);
+          }
         } catch (error) {
           if (fs.existsSync(backupBinary)) {
-            fs.copyFileSync(backupBinary, currentBinary);
+            try {
+              fs.rmSync(currentBinary, { force: true });
+              fs.copyFileSync(backupBinary, currentBinary);
+              fs.chmodSync(currentBinary, 0o755);
+            } catch {
+              // Best-effort rollback; retain the verification/replacement error.
+            }
+          } else {
+            fs.rmSync(currentBinary, { force: true });
           }
           throw error;
-        }
-
-        const executableVersion = await getCliVersion(currentBinary);
-        if (executableVersion !== version) {
-          throw new Error(`Installed CMDR reported ${executableVersion ?? "unknown version"}, expected ${version}`);
         }
 
         return {
@@ -210,6 +278,15 @@ export class CliManager {
   }
 
   async update(): Promise<CliOperationResult> {
+    const configuration = getCliConfiguration();
+    if (configuration.source !== "managed") {
+      return {
+        success: false,
+        status: await this.getStatus(),
+        message: "Updates are available only for the managed CMDR installation.",
+      };
+    }
+
     const check = await this.checkUpdate();
     if (!check.success) {
       return check;
@@ -243,52 +320,100 @@ export class CliManager {
   }
 
   private async download(url: string, destination: string, limit: number): Promise<Buffer> {
-    const response = await this.fetchImpl(url, { headers: { "User-Agent": "cmdr-vscode-extension" } });
-    if (!response.ok) {
-      throw new Error(`Download returned HTTP ${response.status}`);
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      throw new Error("Invalid download URL");
+    }
+    if (parsedUrl.protocol !== "https:") {
+      throw new Error("Release downloads must use HTTPS");
     }
 
-    const declaredLength = response.headers.get("content-length");
-    if (declaredLength && Number(declaredLength) > limit) {
-      throw new Error("Download exceeds size limit");
-    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
 
-    const bytes = Buffer.from(await response.arrayBuffer());
-    if (bytes.length > limit) {
-      throw new Error("Download exceeds size limit");
-    }
+    try {
+      const response = await this.fetchImpl(url, {
+        headers: { "User-Agent": "cmdr-vscode-extension" },
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        throw new Error(`Download returned HTTP ${response.status}`);
+      }
 
-    fs.writeFileSync(destination, bytes, { flag: "w" });
-    return bytes;
+      const declaredLength = response.headers.get("content-length");
+      if (declaredLength) {
+        const length = Number(declaredLength);
+        if (!Number.isFinite(length) || length < 0) {
+          throw new Error("Download has an invalid content length");
+        }
+        if (length > limit) {
+          throw new Error("Download exceeds size limit");
+        }
+      }
+
+      const bytes = Buffer.from(await response.arrayBuffer());
+      if (bytes.length > limit) {
+        throw new Error("Download exceeds size limit");
+      }
+
+      fs.writeFileSync(destination, bytes, { flag: "w" });
+      return bytes;
+    } catch (error) {
+      if (controller.signal.aborted) {
+        throw new Error("Download timed out");
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   private async extractArchive(archivePath: string, destination: string, assetName: string): Promise<void> {
     if (assetName.toLowerCase().endsWith(".zip")) {
       const zip = new AdmZip(archivePath);
+      let extractedBytes = 0;
       for (const entry of zip.getEntries()) {
-        if (entry.isDirectory) {
-          continue;
-        }
         const resolved = path.resolve(destination, entry.entryName);
         if (resolved !== destination && !resolved.startsWith(`${destination}${path.sep}`)) {
           throw new Error("Archive contains unsafe path traversal");
         }
-        if (entry.entryName.endsWith("/")) {
-          continue;
+        const unixMode = typeof entry.header.attr === "number" ? entry.header.attr : 0;
+        if ((unixMode & 0o170000) === 0o120000) {
+          throw new Error("Archive contains unsupported symbolic links");
+        }
+        extractedBytes += entry.header.size;
+        if (extractedBytes > MAX_ARCHIVE_BYTES) {
+          throw new Error("Archive exceeds extracted size limit");
         }
       }
-      zip.extractAllTo(destination, true);
+      zip.extractAllTo(destination, false);
       return;
     }
 
     if (assetName.toLowerCase().endsWith(".tar.gz")) {
+      let extractedBytes = 0;
       await tar.extract({
         file: archivePath,
         cwd: destination,
         strict: true,
-        filter: (entryPath: string) => {
+        preservePaths: false,
+        filter: (entryPath, entry) => {
           const resolved = path.resolve(destination, entryPath);
-          return resolved === destination || resolved.startsWith(`${destination}${path.sep}`);
+          if (resolved !== destination && !resolved.startsWith(`${destination}${path.sep}`)) {
+            throw new Error("Archive contains unsafe path traversal");
+          }
+          if ("type" in entry && (entry.type === "SymbolicLink" || entry.type === "Link")) {
+            throw new Error("Archive contains unsupported links");
+          }
+          if (typeof entry.size === "number") {
+            extractedBytes += entry.size;
+            if (extractedBytes > MAX_ARCHIVE_BYTES) {
+              throw new Error("Archive exceeds extracted size limit");
+            }
+          }
+          return true;
         },
       });
       return;

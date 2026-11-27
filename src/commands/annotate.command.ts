@@ -17,29 +17,25 @@ async function executeAnnotate(uri: vscode.Uri, options: AnnotateOptions = {}) {
     return;
   }
 
-  try {
-    const targetFlag = await getCliTargetFlag(uri);
+  const targetFlag = await getCliTargetFlag(uri);
 
-    const args: string[] = ["ant", targetFlag, uri.fsPath];
+  const args: string[] = ["ant", targetFlag, uri.fsPath];
 
-    if (options.verbose) {
-      args.push("-v");
-    }
-
-    if (options.dryRun) {
-      args.push("--dry-run");
-    }
-
-    await runCliCommand("cmdr", args, {
-      cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
-      successMessage: options.dryRun
-        ? "CMDR: Dry-run completed successfully."
-        : "CMDR: Annotation completed successfully.",
-      errorMessage: "CMDR: Annotation failed.",
-    });
-  } catch (error) {
-    throw error;
+  if (options.verbose) {
+    args.push("-v");
   }
+
+  if (options.dryRun) {
+    args.push("--dry-run");
+  }
+
+  await runCliCommand("cmdr", args, {
+    cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+    successMessage: options.dryRun
+      ? "CMDR: Dry-run completed successfully."
+      : "CMDR: Annotation completed successfully.",
+    errorMessage: "CMDR: Annotation failed.",
+  });
 }
 
 export function registerAnnotateCommand(context: vscode.ExtensionContext) {

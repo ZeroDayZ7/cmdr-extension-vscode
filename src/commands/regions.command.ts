@@ -18,15 +18,11 @@ export function registerRegionsCommand(context: vscode.ExtensionContext) {
         return;
       }
 
-      try {
-        const flag = await getCliTargetFlag(targetUri);
+      const flag = await getCliTargetFlag(targetUri);
 
-        await runCliCommand("cmdr", ["reg", flag, targetUri.fsPath], {
-          successMessage: "CMDR: Code regions (#region) added successfully.",
-        });
-      } catch (error) {
-        throw error;
-      }
+      await runCliCommand("cmdr", ["reg", flag, targetUri.fsPath], {
+        successMessage: "CMDR: Code regions (#region) added successfully.",
+      });
     },
   );
 
